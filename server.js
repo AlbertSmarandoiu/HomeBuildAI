@@ -12,6 +12,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/api", estimatePriceRoute);
 console.log("DEBUG MONGO_URI =", process.env.MONGO_URI);
+import interiorRoute from "./routes/interior.js";
 
 // 🔗 Conectare MongoDB
 mongoose
