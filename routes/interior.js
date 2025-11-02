@@ -1,41 +1,20 @@
 import express from "express";
 import InteriorRequest from "../models/InteriorRequest.js";
-
 const router = express.Router();
 
-// 📨 POST - trimite cerere nouă
 router.post("/", async (req, res) => {
   try {
-    const { description, squareMeters, county, images, userId } = req.body;
-
-    if (!description || !squareMeters || !county) {
-      return res.status(400).json({ message: "Toate câmpurile sunt obligatorii!" });
-    }
-
-    const newRequest = new InteriorRequest({
-      description,
-      squareMeters,
-      county,
-      images,
-      userId,
-    });
-
+    const newRequest = new InteriorRequest(req.body);
     await newRequest.save();
-    res.status(201).json({ message: "Cerere salvată cu succes!", request: newRequest });
+    res.status(201).json({ message: "Cerere salvată cu succes!" });
   } catch (error) {
-    console.error("❌ Eroare la salvare cerere:", error);
-    res.status(500).json({ message: "Eroare server", error: error.message });
+    res.status(500).json({ message: "Eroare la salvare!", error });
   }
 });
 
-// 📋 GET - pentru constructor (toate cererile)
 router.get("/", async (req, res) => {
-  try {
-    const requests = await InteriorRequest.find().sort({ createdAt: -1 });
-    res.json(requests);
-  } catch (error) {
-    res.status(500).json({ message: "Eroare la încărcarea cererilor" });
-  }
+  const requests = await InteriorRequest.find().sort({ date: -1 });
+  res.json(requests);
 });
 
 export default router;

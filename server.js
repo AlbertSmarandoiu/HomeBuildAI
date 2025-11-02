@@ -5,6 +5,7 @@ import cors from "cors";
 import bcrypt from "bcrypt";
 import User from "./models/user.js"; // atenție la literele mici!
 import estimatePriceRoute from "./routes/estimate-price.js";
+import proRoutes from "./routes/proRoutes.js";
 dotenv.config();
 
 const app = express();  
@@ -13,7 +14,8 @@ app.use(express.json());
 app.use("/api", estimatePriceRoute);
 console.log("DEBUG MONGO_URI =", process.env.MONGO_URI);
 import interiorRoute from "./routes/interior.js";
-
+app.use("/api/interior", interiorRoute);
+app.use("/api/pro", proRoutes);
 // 🔗 Conectare MongoDB
 mongoose
   .connect(process.env.MONGO_URI)
@@ -83,3 +85,5 @@ app.post("/api/login", async (req, res) => {
 // 🚀 PORNIM SERVERUL
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server pornit pe portul ${PORT}`));
+
+
