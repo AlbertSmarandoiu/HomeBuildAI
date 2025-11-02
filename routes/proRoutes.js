@@ -1,27 +1,61 @@
 import express from "express";
+import bcrypt from "bcryptjs";
 import Pro from "../models/Pro.js";
+
 const router = express.Router();
 
-// POST /api/pro - Înregistrare
+// 🔹 Înregistrare firmă
 router.post("/", async (req, res) => {
   try {
-    const newPro = new Pro(req.body);
+    const { companyName, contactEmail, cui, telefon, password } = req.body;
+
+    if (!companyName || !contactEmail || !password)
+      return res.status(400).json({ message: "Completează toate câmpurile!" });
+
+    const existing = await Pro.findOne({ contactEmail });
+    if (existing)
+      return res.status(400).json({ message: "Emailul este deja folosit!" });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newPro = new Pro({
+      companyName,
+      contactEmail,
+      cui,
+      telefon,
+      password: hashedPassword,
+      date: new Date(),
+    });
+
     await newPro.save();
     res.status(201).json({ message: "Firma înregistrată cu succes!" });
-  } catch (err) {
-    res.status(500).json({ message: "Eroare la înregistrare" });
+  } catch (error) {
+    console.error("Eroare la înregistrare:", error);
+    res.status(500).json({ message: "Eroare server" });
   }
 });
 
-// ✅ POST /api/pro/login - Autentificare
+// 🔹 Login firmă
 router.post("/login", async (req, res) => {
-  const { contactEmail, password } = req.body;
   try {
-    const pro = await Pro.findOne({ contactEmail, password });
-    if (!pro) return res.status(401).json({ message: "Date de conectare incorecte" });
-    res.json({ message: "Conectare reușită", pro });
-  } catch (err) {
-    res.status(500).json({ message: "Eroare la server" });
+    const { contactEmail, password } = req.body;
+    const pro = await Pro.findOne({ contactEmail });
+
+    if (!pro)
+      return res.status(400).json({ message: "Email sau parolă incorecte!" });
+
+    const isMatch = await bcrypt.compare(password, pro.password);
+    if (!isMatch)
+      return res.status(400).json({ message: "Email sau parolă incorecte!" });
+
+    res.status(200).json({
+      message: "Autentificare reușită!",
+      proId: pro._id,
+      companyName: pro.companyName,
+    });
+  } catch (error) {
+    console.error("Eroare la login:", error);
+    res.status(500).json({ message: "Eroare server" });
   }
 });
 
