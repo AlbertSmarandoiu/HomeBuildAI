@@ -1,12 +1,15 @@
+
 import mongoose from "mongoose";
 
-const interiorSchema = new mongoose.Schema({
-  description: String,
-  squareMeters: String,
-  county: String,
-  materialQuality: String,
-  images: [String],
+const InteriorRequestSchema = new mongoose.Schema({
+  title: { type: String, default: "Lucrare interioară" },
+  description: { type: String, required: true },
+  squareMeters: { type: String, required: true },
+  county: { type: String, required: true },
+  materialQuality: { type: String, required: true },
+  images: { type: [String], default: [] },
+  category: { type: String, default: "interioare" },
   date: { type: Date, default: Date.now },
 });
 
-export default mongoose.model("InteriorRequest", interiorSchema);
+export default mongoose.model("InteriorRequest", InteriorRequestSchema);

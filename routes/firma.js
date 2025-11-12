@@ -3,7 +3,9 @@ const router = express.Router();
 const Firma = require("../models/firma");
 
 // POST /api/firma - înregistrare firmă
-router.post("/", async (req, res) => {
+router.post("/", async (req, res) =>
+  
+  {
   const { numeFirma, emailContact, cui, telefon } = req.body;
 
   if (!numeFirma || !emailContact || !cui || !telefon) {
@@ -70,13 +72,3 @@ router.put("/:id/reject", async (req, res) => {
   }
 });
 
-// GET /api/firma - obține toate firmele
-// router.get("/", async (req, res) => {
-//   try {
-//     const firme = await Firma.find();
-//     res.status(200).json(firme);
-//   } catch (error) {
-//     console.error("Eroare la preluarea firmelor:", error);
-//     res.status(500).json({ message: "Eroare server" });
-//   }
-// });

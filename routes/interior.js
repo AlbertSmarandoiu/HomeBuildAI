@@ -1,20 +1,84 @@
+
 import express from "express";
 import InteriorRequest from "../models/InteriorRequest.js";
 const router = express.Router();
 
+// ✅ Salvează o lucrare interioară
 router.post("/", async (req, res) => {
   try {
-    const newRequest = new InteriorRequest(req.body);
+    const {
+      description,
+      squareMeters,
+      county,
+      materialQuality,
+      images,
+      name,
+      phone,
+      email
+    } = req.body;
+
+    // Validare simplă
+    if (!description || !squareMeters || !county || !materialQuality) {
+      return res.status(400).json({
+        message: "Completează toate câmpurile obligatorii!",
+      });
+    }
+    console.log("Cerere primită:", req.body);
+    const newRequest = new InteriorRequest({
+      title: "Lucrare interioară",
+      description,
+      squareMeters,
+      county,
+      materialQuality,
+      images: images || [],
+      category: "interioare",
+      name,
+      phone,
+      email,
+      date: new Date(),
+    });
+
     await newRequest.save();
-    res.status(201).json({ message: "Cerere salvată cu succes!" });
+    res.status(201).json({
+      message: "Cererea a fost salvată cu succes!",
+      request: newRequest,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Eroare la salvare!", error });
+    console.error("Eroare la salvare:", error);
+    res.status(500).json({
+      message: "Eroare la salvare în baza de date!",
+      error,
+    });
   }
 });
 
-router.get("/", async (req, res) => {
-  const requests = await InteriorRequest.find().sort({ date: -1 });
-  res.json(requests);
+// ✅ Obține toate cererile
+// RUTA NOUĂ: GET /api/interior/filtered
+// Primește un array de skill-uri din query parameter și filtrează în DB.
+router.get("/filtered", async (req, res) => {
+    try {
+        // 1. Preia skill-urile din URL query (ex: /filtered?skills=Lucrări%20interioare,zugrăvit)
+        const skillsQuery = req.query.skills; 
+        if (!skillsQuery) {
+             return res.status(200).json([]); // Returnează gol dacă nu sunt skill-uri
+        }
+
+        // Transformă stringul primit în array (dacă ai trimite un string separat prin virgulă)
+        // Sau primești direct un array JSON, depinde de cum îl trimiți din frontend.
+        const proSkills = skillsQuery.split(','); 
+        
+        // 2. Interoghează MongoDB (folosind $in pentru potrivire exactă)
+        const requests = await InteriorRequest.find({
+            // Caută cererile unde 'category' este IN array-ul de 'proSkills'
+            category: { $in: proSkills }, 
+        }).sort({ date: -1 });
+        console.log("Număr cereri returnate de DB:", requests.length); // 🚨 Adaugă acest log
+        res.status(200).json(requests);
+
+    } catch (error) {
+        console.error("Eroare la preluarea cererilor filtrate:", error);
+        res.status(500).json({ message: "Eroare server la filtrare." });
+    }
 });
 
 export default router;

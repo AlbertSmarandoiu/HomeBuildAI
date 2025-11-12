@@ -9,7 +9,7 @@ const requestSchema = new mongoose.Schema({
     type: String,
     required: true,
     enum: [
-      "Lucrări interioare",
+      "interioare",
       "Lucrări exterioare",
       "Case la roșu",
       "Tencuieli",

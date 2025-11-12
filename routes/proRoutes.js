@@ -1,13 +1,11 @@
 import express from "express";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
 import Pro from "../models/Pro.js";
 
 const router = express.Router();
-
-// 🔹 Înregistrare firmă
 router.post("/", async (req, res) => {
   try {
-    const { companyName, contactEmail, cui, telefon, password } = req.body;
+    const { companyName, contactEmail, cui, telefon, password, skills } = req.body;
 
     if (!companyName || !contactEmail || !password)
       return res.status(400).json({ message: "Completează toate câmpurile!" });
@@ -24,11 +22,12 @@ router.post("/", async (req, res) => {
       cui,
       telefon,
       password: hashedPassword,
+      skills: skills || [], // 👈 salvează abilitățile
       date: new Date(),
     });
 
     await newPro.save();
-    res.status(201).json({ message: "Firma înregistrată cu succes!" });
+    res.status(201).json({ message: "Firma înregistrată cu succes!", pro: newPro });
   } catch (error) {
     console.error("Eroare la înregistrare:", error);
     res.status(500).json({ message: "Eroare server" });
@@ -52,6 +51,7 @@ router.post("/login", async (req, res) => {
       message: "Autentificare reușită!",
       proId: pro._id,
       companyName: pro.companyName,
+      skills: pro.skills, // 👈 ADAUGĂ ASTA
     });
   } catch (error) {
     console.error("Eroare la login:", error);
