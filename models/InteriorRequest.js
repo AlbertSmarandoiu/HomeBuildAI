@@ -1,6 +1,7 @@
 
 import mongoose from "mongoose";
-
+import pkg from 'mongodb';
+const { MONGO_CLIENT_EVENTS } = pkg;
 const InteriorRequestSchema = new mongoose.Schema({
   title: { type: String, default: "Lucrare interioară" },
   description: { type: String, required: true },
@@ -10,6 +11,7 @@ const InteriorRequestSchema = new mongoose.Schema({
   images: { type: [String], default: [] },
   category: { type: String, default: "interioare" },
   date: { type: Date, default: Date.now },
+  userId:{type:mongoose.Schema.Types.ObjectId, ref:'User'},
 });
 
 export default mongoose.model("InteriorRequest", InteriorRequestSchema);

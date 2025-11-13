@@ -11,25 +11,21 @@ router.post('/', async (req, res) => {
     try {
         const { receiverId, senderId, content } = req.body;
         
-        // Caută conversația existentă între cei doi
         let conversation = await Conversation.findOne({
             participants: { $all: [senderId, receiverId] }
         });
 
-        // Dacă nu există, o creează
         if (!conversation) {
             conversation = await Conversation.create({
                 participants: [senderId, receiverId],
                 lastMessage: content,
             });
         } else {
-            // Dacă există, actualizează ultimul mesaj
             conversation.lastMessage = content;
             conversation.lastMessageAt = Date.now();
             await conversation.save();
         }
 
-        // Creează mesajul
         const message = await Message.create({
             conversationId: conversation._id,
             senderId: senderId,

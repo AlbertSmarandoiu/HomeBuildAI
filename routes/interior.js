@@ -2,54 +2,64 @@
 import express from "express";
 import InteriorRequest from "../models/InteriorRequest.js";
 const router = express.Router();
-
+import verifyToken from '../middleware/authMiddleware.js';
 // ✅ Salvează o lucrare interioară
-router.post("/", async (req, res) => {
-  try {
-    const {
-      description,
-      squareMeters,
-      county,
-      materialQuality,
-      images,
-      name,
-      phone,
-      email
-    } = req.body;
+// routes/interior.js (Ruta POST "/") - CORECTAT
 
-    // Validare simplă
-    if (!description || !squareMeters || !county || !materialQuality) {
-      return res.status(400).json({
-        message: "Completează toate câmpurile obligatorii!",
-      });
+router.post("/", verifyToken, async (req, res) => {
+    try {
+        // Presupunând că obții postingUserId dintr-un middleware (req.user.id)
+        const postingUserId = req.user.id; // Asigură-te că ai un middleware care setează asta!
+        
+        const {
+            description,
+            squareMeters,
+            county,
+            materialQuality,
+            images,
+            name,
+            phone,
+            email
+        } = req.body;
+
+        // 1. VALIDARE (Trebuie să fie prima)
+        if (!description || !squareMeters || !county || !materialQuality || !postingUserId) {
+            return res.status(400).json({
+                message: "Date incomplete (userul sau câmpurile obligatorii lipsesc)!",
+            });
+        }
+
+        // 2. CREAREA ȘI SALVAREA CERERII (O SINGURĂ DATĂ)
+        const newRequest = new InteriorRequest({
+            title: "Lucrare interioară",
+            description,
+            squareMeters,
+            county,
+            materialQuality,
+            images: images || [],
+            category: "interioare",
+            name,
+            phone,
+            email,
+            userId: postingUserId, // 👈 Punctul crucial
+            date: new Date(),
+        });
+
+        await newRequest.save();
+        console.log("Cerere salvată:", newRequest);
+
+        res.status(201).json({
+            message: "Cererea a fost salvată cu succes!",
+            request: newRequest,
+        });
+
+    } catch (error) {
+        console.error("Eroare la salvare:", error);
+        res.status(500).json({
+            message: "Eroare la salvare în baza de date!",
+            error,
+        });
     }
-    console.log("Cerere primită:", req.body);
-    const newRequest = new InteriorRequest({
-      title: "Lucrare interioară",
-      description,
-      squareMeters,
-      county,
-      materialQuality,
-      images: images || [],
-      category: "interioare",
-      name,
-      phone,
-      email,
-      date: new Date(),
-    });
-
-    await newRequest.save();
-    res.status(201).json({
-      message: "Cererea a fost salvată cu succes!",
-      request: newRequest,
-    });
-  } catch (error) {
-    console.error("Eroare la salvare:", error);
-    res.status(500).json({
-      message: "Eroare la salvare în baza de date!",
-      error,
-    });
-  }
 });
 
 // ✅ Obține toate cererile
