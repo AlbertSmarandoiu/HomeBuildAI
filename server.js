@@ -8,7 +8,7 @@ import messagesRoutes from './routes/messages.js';
 import User from "./models/user.js";
 import proRoutes from "./routes/proRoutes.js";
 import interiorRoute from "./routes/interior.js";
-
+import jwt from 'jsonwebtoken';
 dotenv.config();
 
 const app = express();
@@ -44,8 +44,7 @@ app.post("/api/register", async (req, res) => {
     if (existingUser)
       return res.status(400).json({ message: "Există deja un cont cu acest email!" });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ name, email, password: hashedPassword });
+    const newUser = new User({ name, email, password: password });
 
     await newUser.save();
     res.status(201).json({ message: "Cont creat cu succes!" });
@@ -59,7 +58,7 @@ app.post("/api/register", async (req, res) => {
 app.post("/api/login", async (req, res) => {
   try {
     console.log("📩 Cerere primită la /api/login:", req.body);
-
+   
     const { email, password } = req.body;
     if (!email || !password)
       return res.status(400).json({ message: "Email și parolă necesare!" });
@@ -71,9 +70,11 @@ app.post("/api/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch)
       return res.status(400).json({ message: "Parolă incorectă." });
-
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
     res.status(200).json({
       message: "Autentificare reușită!",
+      token: token,
+      userId: user._id,
       user: { id: user._id, name: user.name, email: user.email, role: user.role },
     });
   } catch (error) {

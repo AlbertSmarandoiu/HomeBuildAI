@@ -1,37 +1,32 @@
 
-// export const register = async (req, res) => {
-//   try {
-//     const { name, email, password, role } = req.body;
-//     const existingUser = await User.findOne({ email });
-//     if (existingUser) return res.status(400).json({ message: "Email deja folosit" });
-
-//     const user = await User.create({ name, email, password, role });
-//     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
-//     res.status(201).json({ user: { id: user._id, name: user.name, email: user.email, role: user.role }, token });
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-
-// export const login = async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-//     const user = await User.findOne({ email });
-//     if (!user) return res.status(400).json({ message: "Email sau parola incorecte" });
-
-//     const isMatch = await user.comparePassword(password);
-//     if (!isMatch) return res.status(400).json({ message: "Email sau parola incorecte" });
-
-//     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
-//     res.json({ user: { id: user._id, name: user.name, email: user.email, role: user.role }, token });
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-// În controllers/authController.js
-// Importă și JWT pentru a crea token-ul de login
 import User from "../models/user.js";
 import jwt from "jsonwebtoken";
+export const register = async (req, res) => { // <-- DECOMENTEAZĂ SAU ADAUGĂ ASTA
+    try {
+        const { name, email, password } = req.body;
+        
+        // 🚨 Role implicit 'user', deoarece ai simplificat frontend-ul
+        const role = 'user'; 
+        
+        const existingUser = await User.findOne({ email });
+        if (existingUser) return res.status(400).json({ message: "Email deja folosit" });
+
+        // 🛑 ELIMINĂ ORICE HASHING EXPLICIT AICI (ex: NU folosi bcrypt.hash)
+        // Hook-ul pre('save') din modelul User va hasha automat parola.
+        const user = await User.create({ name, email, password, role }); 
+
+        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
+        
+        res.status(201).json({ 
+            user: { id: user._id, name: user.name, email: user.email, role: user.role }, 
+            token 
+        });
+        
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Eroare la înregistrare: " + err.message });
+    }
+};
 
 export const login = async (req, res) => {
     try {

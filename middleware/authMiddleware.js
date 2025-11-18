@@ -1,14 +1,19 @@
+// middleware/authMiddleware.js
+
 import jwt from "jsonwebtoken";
+const verifyToken = (req, res, next) => {
+    // ... (Logica funcției protect/verifyToken)
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ message: "Nu esti autentificat" });
 
-export const protect = (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(401).json({ message: "Nu esti autentificat" });
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (err) {
-    res.status(401).json({ message: "Token invalid" });
-  }
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
+        next();
+    } catch (err) {
+        res.status(401).json({ message: "Token invalid" });
+    }
 };
+
+// ✅ Fă exportul default al funcției
+export default verifyToken;

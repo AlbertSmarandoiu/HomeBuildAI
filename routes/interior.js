@@ -1,11 +1,11 @@
 
 import express from "express";
 import InteriorRequest from "../models/InteriorRequest.js";
-const router = express.Router();
+
 import verifyToken from '../middleware/authMiddleware.js';
 // ✅ Salvează o lucrare interioară
 // routes/interior.js (Ruta POST "/") - CORECTAT
-
+const router = express.Router();
 router.post("/", verifyToken, async (req, res) => {
     try {
         // Presupunând că obții postingUserId dintr-un middleware (req.user.id)
