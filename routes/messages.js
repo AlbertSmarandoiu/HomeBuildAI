@@ -14,7 +14,7 @@ router.post('/', async (req, res) => {
         let conversation = await Conversation.findOne({
             participants: { $all: [senderId, receiverId] }
         });
-
+        let message = null; // 🚨 Declari variabila la început
         if (!conversation) {
             conversation = await Conversation.create({
                 participants: [senderId, receiverId],
@@ -26,13 +26,19 @@ router.post('/', async (req, res) => {
             await conversation.save();
         }
 
-        const message = await Message.create({
-            conversationId: conversation._id,
-            senderId: senderId,
-            content: content,
-        });
+        if (content && content.trim().length > 0) {
+                message = await Message.create({
+                conversationId: conversation._id,
+                senderId: senderId,
+                content: content,
+            });
+        }
 
-        res.status(201).json({ conversation, message });
+        // Returnează ID-ul conversației, indiferent dacă s-a trimis mesaj sau nu
+        res.status(201).json({ 
+            conversation: { _id: conversation._id }, 
+            message:message 
+        });
 
     } catch (error) {
         console.error("Eroare la trimiterea mesajului:", error);
@@ -60,22 +66,24 @@ router.get('/conversations/:userId', async (req, res) => {
         res.status(500).json({ message: "Eroare server" });
     }
 });
-
-
-// 3. RUTA: Preluarea mesajelor dintr-o conversație
 router.get('/messages/:conversationId', async (req, res) => {
     try {
-        const messages = await Message.find({
-            conversationId: req.params.conversationId
-        })
-        .sort({ createdAt: 1 }); // Ordine cronologică
+        const conversationId = req.params.conversationId;
 
-        res.status(200).json(messages);
+        // 1. Găsește mesajele
+        const messages = await Message.find({ conversationId }).sort({ createdAt: 1 });
+
+        // 2. Găsește participanții (din conversație)
+        const conversation = await Conversation.findById(conversationId).select('participants');
+
+        if (!conversation) {
+             return res.status(404).json({ message: "Conversația nu a fost găsită." });
+        }
+
+        // ✅ Returnează ambele
+        res.status(200).json({ messages, participants: conversation.participants }); 
     } catch (error) {
-        console.error("Eroare la preluarea mesajelor:", error);
-        res.status(500).json({ message: "Eroare server" });
+        // ... (Logica de eroare)
     }
 });
-
-
 export default router;

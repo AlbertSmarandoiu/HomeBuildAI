@@ -1,8 +1,9 @@
 import express from "express";
 import bcrypt from "bcrypt";
 import Pro from "../models/Pro.js";
-
+import jwt from 'jsonwebtoken';
 const router = express.Router();
+
 router.post("/", async (req, res) => {
   try {
     const { companyName, contactEmail, cui, telefon, password, skills } = req.body;
@@ -38,18 +39,29 @@ router.post("/", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { contactEmail, password } = req.body;
+    // 🚨 DEBUG 1: Verifică ce primește serverul
+    console.log("Tentativă login PRO:", contactEmail);
     const pro = await Pro.findOne({ contactEmail });
 
-    if (!pro)
+    if (!pro){
+      console.log("Eroare: PRO negăsit cu emailul:", contactEmail);
       return res.status(400).json({ message: "Email sau parolă incorecte!" });
-
+    }
     const isMatch = await bcrypt.compare(password, pro.password);
-    if (!isMatch)
+    if (!isMatch){
+      console.log("Eroare: Parolă nu se potrivește pentru PRO:", contactEmail);
       return res.status(400).json({ message: "Email sau parolă incorecte!" });
-
+    }
+    const token = jwt.sign(
+        { id: pro._id, role: 'constructor' }, 
+        process.env.JWT_SECRET, 
+        { expiresIn: '7d' }
+    );
+    console.log("Succes! PRO ID returnat:", pro._id);
     res.status(200).json({
       message: "Autentificare reușită!",
       proId: pro._id,
+      token: token,
       companyName: pro.companyName,
       skills: pro.skills, // 👈 ADAUGĂ ASTA
     });
