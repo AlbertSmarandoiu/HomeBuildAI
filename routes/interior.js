@@ -8,9 +8,10 @@ import verifyToken from '../middleware/authMiddleware.js';
 const router = express.Router();
 router.post("/", verifyToken, async (req, res) => {
     try {
+        console.log("✅ CERERE PRIMITĂ ȘI AUTENTIFICATĂ CU SUCCES!");
         // Presupunând că obții postingUserId dintr-un middleware (req.user.id)
-        const postingUserId = req.user.id; // Asigură-te că ai un middleware care setează asta!
-        
+        const postingUserId = req.user.id;
+        console.log("ID UTILIZATOR PENTRU SALVARE:", postingUserId);
         const {
             description,
             squareMeters,
@@ -24,6 +25,7 @@ router.post("/", verifyToken, async (req, res) => {
 
         // 1. VALIDARE (Trebuie să fie prima)
         if (!description || !squareMeters || !county || !materialQuality || !postingUserId) {
+            console.error("❌ EROARE 400: Câmpuri obligatorii lipsă. User ID:", postingUserId);
             return res.status(400).json({
                 message: "Date incomplete (userul sau câmpurile obligatorii lipsesc)!",
             });
@@ -52,6 +54,7 @@ router.post("/", verifyToken, async (req, res) => {
             message: "Cererea a fost salvată cu succes!",
             request: newRequest,
         });
+        console.log("Datele primite pentru lucrare:", req.body);
 
     } catch (error) {
         console.error("Eroare la salvare:", error);
@@ -62,24 +65,15 @@ router.post("/", verifyToken, async (req, res) => {
     }
 });
 
-// ✅ Obține toate cererile
-// RUTA NOUĂ: GET /api/interior/filtered
-// Primește un array de skill-uri din query parameter și filtrează în DB.
 router.get("/filtered", async (req, res) => {
     try {
-        // 1. Preia skill-urile din URL query (ex: /filtered?skills=Lucrări%20interioare,zugrăvit)
+       
         const skillsQuery = req.query.skills; 
         if (!skillsQuery) {
-             return res.status(200).json([]); // Returnează gol dacă nu sunt skill-uri
+             return res.status(200).json([]); 
         }
-
-        // Transformă stringul primit în array (dacă ai trimite un string separat prin virgulă)
-        // Sau primești direct un array JSON, depinde de cum îl trimiți din frontend.
         const proSkills = skillsQuery.split(','); 
-        
-        // 2. Interoghează MongoDB (folosind $in pentru potrivire exactă)
         const requests = await InteriorRequest.find({
-            // Caută cererile unde 'category' este IN array-ul de 'proSkills'
             category: { $in: proSkills }, 
         }).sort({ date: -1 });
         console.log("Număr cereri returnate de DB:", requests.length); // 🚨 Adaugă acest log
@@ -90,5 +84,14 @@ router.get("/filtered", async (req, res) => {
         res.status(500).json({ message: "Eroare server la filtrare." });
     }
 });
-
+router.get("/count/:userId", async (req, res) => {
+    try {
+        const count = await InteriorRequest.countDocuments({ 
+            userId: req.params.userId
+        });
+        res.status(200).json({ count }); // ✅ Răspuns JSON de succes
+    } catch (error) {
+        // ... (Logică de eroare JSON)
+    }
+});
 export default router;

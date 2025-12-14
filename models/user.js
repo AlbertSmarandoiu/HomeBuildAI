@@ -19,18 +19,20 @@ userSchema.pre("save", async function(next) {
 // models/user.js
 
 // Verificare password la login
-userSchema.methods.comparePassword = async function(password) {
-    console.log("--- DEBUG COMPARARE PAROLA ---");
-    console.log("Parola primită (simplă):", password);
-    console.log("Hash salvat în DB:", this.password);
+// userSchema.methods.comparePassword = async function(password) {
+//     // console.log("--- DEBUG COMPARARE PAROLA ---");
+//     // console.log("Parola primită (simplă):", password);
+//     // console.log("Hash salvat în DB:", this.password);
+//     // const isMatch = await bcrypt.compare(password, this.password);
     
-    // Asigură-te că bcrypt este importat (presupun că este în models/user.js)
-    const isMatch = await bcrypt.compare(password, this.password);
-    
-    console.log("Rezultat compare:", isMatch);
-    console.log("-------------------------------");
+//     // console.log("Rezultat compare:", isMatch);
+//     // console.log("-------------------------------");
 
-    return isMatch;
+//     // return isMatch;
+    
+// };
+userSchema.methods.comparePassword = async function(candidatePassword) {
+    // Folosește bcrypt.compare pentru a verifica parola introdusă cu hash-ul salvat
+    return await bcrypt.compare(candidatePassword, this.password);
 };
-
 export default mongoose.model("User", userSchema);

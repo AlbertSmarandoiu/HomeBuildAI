@@ -1,20 +1,18 @@
 
 import User from "../models/user.js";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 export const register = async (req, res) => { // <-- DECOMENTEAZĂ SAU ADAUGĂ ASTA
     try {
         const { name, email, password } = req.body;
         
         // 🚨 Role implicit 'user', deoarece ai simplificat frontend-ul
-        const role = 'user'; 
         
         const existingUser = await User.findOne({ email });
         if (existingUser) return res.status(400).json({ message: "Email deja folosit" });
-
-        // 🛑 ELIMINĂ ORICE HASHING EXPLICIT AICI (ex: NU folosi bcrypt.hash)
-        // Hook-ul pre('save') din modelul User va hasha automat parola.
-        const user = await User.create({ name, email, password, role }); 
-
+        //const hashedPassword = await bcrypt.hash(password, 10);
+        const user = await User.create({ name, email,password, role: 'user' });
+        
         const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
         
         res.status(201).json({ 
@@ -31,23 +29,18 @@ export const register = async (req, res) => { // <-- DECOMENTEAZĂ SAU ADAUGĂ A
 export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
-
-        // 1. Găsește userul
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(404).json({ message: "Utilizator negăsit." });
         }
-
-        // 2. Compară parola (FOLOSEȘTE METODA DIN MODEL)
         const isMatch = await user.comparePassword(password); // 👈 Folosești metoda corectă?
+        //const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             // Dacă aici e problema, serverul răspunde 'Parolă incorectă'
             return res.status(400).json({ message: "Email sau parolă incorecte." });
         }
 
-        // 3. Creează și trimite Token-ul
-        // Dacă serverul rămâne blocat ("nu se mai încarcă"), eroarea e probabil AICI.
-        // Verifică dacă funcția ta de generare JWT/token-ul cauzează o eroare sau un loop.
+        
         const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
         res.status(200).json({ 
@@ -58,5 +51,43 @@ export const login = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Eroare server la login." });
+    }
+};
+export const getUserProfile = async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const user = await User.findById(userId).select('-password');
+        
+        if (!user) {
+            return res.status(404).json({ message: "Utilizator negăsit." });
+        }
+        
+        // Câmpul 'name' poate lipsi, deci trimitem tot obiectul user
+        res.status(200).json(user);
+    } catch (error) {
+        console.error("Eroare la preluarea profilului:", error);
+        res.status(400).json({ message: "ID utilizator invalid." });
+    }
+};
+export const updateUserProfile = async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const { name } = req.body;
+        
+        // Actualizăm doar câmpul 'name'
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { name },
+            { new: true }
+        ).select('-password');
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: "Utilizator negăsit." });
+        }
+
+        res.status(200).json({ message: "Profil actualizat!", user: updatedUser });
+    } catch (error) {
+        console.error("Eroare la actualizarea profilului:", error);
+        res.status(500).json({ message: "Eroare server la actualizare." });
     }
 };

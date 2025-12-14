@@ -1,8 +1,6 @@
 import express from "express";
 import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
-// Asigură-te că ai o funcție middleware pentru a verifica autentificarea (ex: verifyToken)
-// import verifyToken from '../middleware/authMiddleware.js'; 
 
 const router = express.Router();
 
@@ -58,7 +56,7 @@ router.get('/conversations/:userId', async (req, res) => {
         })
         .sort({ lastMessageAt: -1 })
         // Populatează informațiile despre celălalt participant
-        .populate('participants', 'name companyName email'); // Asigură-te că User/Pro are câmpul 'name' sau 'companyName'
+        .populate('participants', 'companyName'); // Asigură-te că User/Pro are câmpul 'name' sau 'companyName'
 
         res.status(200).json(conversations);
     } catch (error) {
