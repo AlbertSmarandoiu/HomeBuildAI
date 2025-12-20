@@ -1,0 +1,54 @@
+{
+  "preturi_unitare": {
+    "Gletuire pereti": {
+      "unitate_masura": "m2",
+      "cost_manopera": {
+        "Standard": { "pret_mediu": 25, "judete_scumpe": 32 },
+        "Premium": { "pret_mediu": 35, "judete_scumpe": 45 }
+      },
+      "cost_material": {
+        "Economic": 3,
+        "Standard": 5,
+        "Premium": 8
+      },
+      "consum_material_per_m2": 3.0,
+      "unite_material": "kg"
+    },
+    "Vopsit lavabil (2 straturi)": {
+      "unitate_masura": "m2",
+      "cost_manopera": {
+        "Standard": { "pret_mediu": 15, "judete_scumpe": 20 },
+        "Premium": { "pret_mediu": 22, "judete_scumpe": 28 }
+      },
+      "cost_material": {
+        "Economic": 0.2,
+        "Standard": 0.35,
+        "Premium": 0.5
+      },
+      "consum_material_per_m2": 0.25,
+      "unite_material": "litri"
+    },
+    "Montat parchet laminat": {
+      "unitate_masura": "m2",
+      "cost_manopera": {
+        "Standard": { "pret_mediu": 35, "judete_scumpe": 45 },
+        "Premium": { "pret_mediu": 50, "judete_scumpe": 65 }
+      },
+      "cost_material": {
+        "Economic": 50,
+        "Standard": 70,
+        "Premium": 100
+      },
+      "consum_material_per_m2": 1.0,
+      "unite_material": "m2"
+    }
+  },
+  "judete_cu_pret_ridicat": [
+    "Bucuresti",
+    "Ilfov",
+    "Cluj",
+    "Timis",
+    "Brasov",
+    "Constanta"
+  ]
+}

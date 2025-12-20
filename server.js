@@ -14,6 +14,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import authRoutes from './routes/auth.js';
 import interiorRoutes from './routes/interior.js';
+import { getPriceEstimate } from './Controllers/estimationController.js';
 dotenv.config();
 
 const app = express();
@@ -24,6 +25,7 @@ app.use("/api/messages", messagesRoutes);
 app.use("/api/portfolio", portfolioRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/interiorrequests", interiorRoutes);
+app.get("/api/estimate", getPriceEstimate);
 // 🔗 Conectare la MongoDB
 
 const httpServer = createServer(app);
