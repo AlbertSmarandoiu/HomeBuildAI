@@ -15,63 +15,64 @@ import sendPriceEstimateEmail from '../utils/emailService.js';
 // Configurare Gemini
 const ai = new GoogleGenAI(process.env.GEMINI_API_KEY); 
 const model = "gemini-2.5-flash"; 
+export async function extractStructuredTasks(requestData) {
+  const { description, squareMeters, county, materialQuality } = requestData;
 
-/**
- * Functia 1: Extrage sarcinile și datele cheie folosind LLM-ul.
- * (Păstrată din versiunea ta, funcționează)
- */
-async function extractStructuredTasks(requestData) {
-    const { description, squareMeters, county, materialQuality } = requestData;
-    const sarciniValide = Object.keys(pricingData.preturi_unitare);
+  // Lista sarcinilor disponibile (din pricingData)
+  const sarciniValide = [
+    "Gletuire pereti",
+    "Vopsit lavabil (2 straturi)",
+    "Montat parchet laminat"
+    // poți adăuga toate sarcinile tale
+  ];
 
-    // Schema definită exact după specificațiile Google GenAI
-    const schema = {
-        description: "Schema pentru estimarea costurilor de renovare",
-        type: "object",
-        properties: {
-            sarcini_identificate: {
-                type: "array",
-                items: {
-                    type: "string",
-                },
-                description: "Lista sarcinilor de lucru."
-            },
-            suprafata_mp: { type: "number" },
-            calitate: { type: "string" }
-        },
-        required: ["sarcini_identificate", "suprafata_mp", "calitate"]
-    };
+  // Schema JSON care va fi returnată
+  const schema = {
+    description: "Schema pentru estimarea costurilor de renovare",
+    type: "object",
+    properties: {
+      sarcini_identificate: {
+        type: "array",
+        items: { type: "string" },
+        description: "Lista sarcinilor de lucru extrase din text"
+      }
+    },
+    required: ["sarcini_identificate"]
+  };
 
-    const prompt = `Analizează această cerere: "${description}". 
-    Identifică sarcinile potrivite din lista următoare: [${sarciniValide.join(", ")}].
-    Dacă nu ești sigur, alege sarcinile cele mai apropiate de context.
-    Suprafața este ${squareMeters} mp, județul este ${county}, calitatea este ${materialQuality}.
-    Returnează un obiect JSON valid conform schemei.`;
+  // Prompt pentru Gemini
+  const prompt = `
+Analizează această cerere de renovare: "${description}".
+Identifică toate sarcinile posibile din lista următoare: [${sarciniValide.join(", ")}].
+Folosește orice sinonim sau formulare apropiată, dar returnează **numai sarcinile din lista validă**.
+Suprafața este ${squareMeters} mp, județul este ${county}, calitatea este ${materialQuality}.
+Returnează un obiect JSON valid conform schemei.
+Exemplu de răspuns: { "sarcini_identificate": ["Gletuire pereti", "Vopsit lavabil (2 straturi)"] }
+  `;
 
-    try {
-        const result = await ai.getGenerativeModel({ model: "gemini-1.5-flash" }) // Folosim modelul stabil
-            .generateContent({
-                contents: [{ role: "user", parts: [{ text: prompt }] }],
-                generationConfig: {
-                    responseMimeType: "application/json",
-                    responseSchema: schema, // Schema definită mai sus
-                },
-            });
+  try {
+    // 🚨 SCHIMBĂRILE AICI: 
+    // 1. Folosim "ai" (cum ai definit sus), nu "genAI"
+    // 2. Folosim "gemini-1.5-flash" (mai stabil pentru JSON)
+    const result = await ai.getGenerativeModel({ model: "gemini-1.5-flash" })
+      .generateContent({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: schema
+        }
+      });
 
-        const responseText = result.response.text();
-        console.log("Răspuns Gemini:", responseText);
-        return JSON.parse(responseText);
-    } catch (error) {
-        // Dacă dă eroare de schemă, logăm tot obiectul ca să vedem unde crapă
-        console.error("Eroare detaliată Gemini:", JSON.stringify(error, null, 2));
-        return null;
-    }
+    const responseText = result.response.text();
+    console.log("✅ Răspuns Gemini:", responseText);
+    return JSON.parse(responseText);
+  } catch (error) {
+    // Folosim error.message pentru a vedea eroarea reală în terminal, nu doar {}
+    console.error("❌ Eroare Gemini reală:", error.message || error);
+    return null;
+  }
 }
-/**
- * Functia 2: Calculează costul total pe baza sarcinilor extrase.
- * (Păstrată din versiunea ta, funcționează)
- */
-function calculateFinalCost(structuredData, county) {
+export function calculateFinalCost(structuredData, county) {
     const { sarcini_identificate, suprafata_mp, calitate } = structuredData;
     let costTotal = 0;
     const detaliiCost = [];

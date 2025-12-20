@@ -1,17 +1,23 @@
 
 import express from "express";
 import InteriorRequest from "../models/InteriorRequest.js";
-
+import { createRequest } from '../Controllers/requestController.js'; // Importă funcția nouă
+//import { protect } from '../middleware/authMiddleware.js'; // Middleware-ul de login
 import verifyToken from '../middleware/authMiddleware.js';
 // ✅ Salvează o lucrare interioară
 // routes/interior.js (Ruta POST "/") - CORECTAT
 const router = express.Router();
+// Importă funcțiile necesare la începutul fișierului de rute
+import { extractStructuredTasks, calculateFinalCost } from '../Controllers/estimationController.js';
+import sendPriceEstimateEmail from '../utils/emailService.js';
+router.post("/", verifyToken, createRequest);
 router.post("/", verifyToken, async (req, res) => {
+    console.log("!!! AM INTRAT ÎN RUTA CORECTĂ !!!");
     try {
         console.log("✅ CERERE PRIMITĂ ȘI AUTENTIFICATĂ CU SUCCES!");
-        // Presupunând că obții postingUserId dintr-un middleware (req.user.id)
         const postingUserId = req.user.id;
-        console.log("ID UTILIZATOR PENTRU SALVARE:", postingUserId);
+        const userEmail = req.user.email; // Presupunem că emailul vine din token/middleware
+
         const {
             description,
             squareMeters,
@@ -20,18 +26,15 @@ router.post("/", verifyToken, async (req, res) => {
             images,
             name,
             phone,
-            email
+            email // Emailul introdus manual în formular (dacă există)
         } = req.body;
 
-        // 1. VALIDARE (Trebuie să fie prima)
+        // 1. VALIDARE
         if (!description || !squareMeters || !county || !materialQuality || !postingUserId) {
-            console.error("❌ EROARE 400: Câmpuri obligatorii lipsă. User ID:", postingUserId);
-            return res.status(400).json({
-                message: "Date incomplete (userul sau câmpurile obligatorii lipsesc)!",
-            });
+            return res.status(400).json({ message: "Date incomplete!" });
         }
 
-        // 2. CREAREA ȘI SALVAREA CERERII (O SINGURĂ DATĂ)
+        // 2. CREAREA ȘI SALVAREA CERERII
         const newRequest = new InteriorRequest({
             title: "Lucrare interioară",
             description,
@@ -43,28 +46,60 @@ router.post("/", verifyToken, async (req, res) => {
             name,
             phone,
             email,
-            userId: postingUserId, // 👈 Punctul crucial
+            userId: postingUserId,
             date: new Date(),
         });
 
         await newRequest.save();
-        console.log("Cerere salvată:", newRequest);
+        console.log("✅ Cerere salvată în DB. Pornesc estimarea AI...");
 
+        // ---------------------------------------------------------
+        // 🔥 LOGICA NOUĂ: ESTIMARE ȘI EMAIL
+        // ---------------------------------------------------------
+        try {
+            // A. Extracție sarcini cu Gemini
+            const structured = await extractStructuredTasks({
+                description,
+                squareMeters: parseFloat(squareMeters),
+                county,
+                materialQuality
+            });
+
+            if (structured && structured.sarcini_identificate?.length > 0) {
+                // B. Calcul cost
+                const cost = calculateFinalCost(structured, county);
+
+                // C. Trimitere email
+                // Folosim emailul din contul de utilizator sau cel din formular
+                const targetEmail = userEmail || email; 
+                
+                console.log(`📧 Trimit email către: ${targetEmail}`);
+                
+                await sendPriceEstimateEmail(
+                    targetEmail,
+                    cost.costTotal,
+                    cost.detaliiCost,
+                    description
+                );
+            } else {
+                console.log("⚠️ Gemini nu a putut identifica sarcini clare.");
+            }
+        } catch (aiError) {
+            console.error("❌ Eroare la procesarea AI/Email (cererea a fost totuși salvată):", aiError);
+        }
+        // ---------------------------------------------------------
+
+        // 3. RĂSPUNS CĂTRE FRONT-END
         res.status(201).json({
-            message: "Cererea a fost salvată cu succes!",
+            message: "Cererea a fost salvată și estimarea este în curs de trimitere!",
             request: newRequest,
         });
-        console.log("Datele primite pentru lucrare:", req.body);
 
     } catch (error) {
         console.error("Eroare la salvare:", error);
-        res.status(500).json({
-            message: "Eroare la salvare în baza de date!",
-            error,
-        });
+        res.status(500).json({ message: "Eroare la salvare!", error });
     }
 });
-
 router.get("/filtered", async (req, res) => {
     try {
        
