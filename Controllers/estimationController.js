@@ -1,5 +1,4 @@
 // controllers/estimationController.js
-import { GoogleGenAI } from '@google/genai';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from 'dotenv';
 dotenv.config();
@@ -21,8 +20,8 @@ export async function extractStructuredTasks({ description }) {
 
   try {
     // 🚨 ACESTA ESTE MODUL CORECT DE APEL:
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
+    //const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text().replace(/```json/g, "").replace(/```/g, "").trim();

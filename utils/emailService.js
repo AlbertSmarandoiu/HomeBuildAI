@@ -19,7 +19,7 @@
     }
 });
     // 🚨 Export Implicit (Necesar pentru a se potrivi cu import sendPriceEstimateEmail din controller)
-    export default async function sendPriceEstimateEmail(toEmail, estimareTotala, detalii, descriere) {
+    export default async function sendPriceEstimateEmail(toEmail, estimareTotala, detalii, descriere,squareMeters,county,materialQuality) {
         
         // Formatarea detaliilor (Manoperă/Materiale)
         const detaliiHtml = detalii.map(d => `
