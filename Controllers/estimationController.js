@@ -1,77 +1,96 @@
 // controllers/estimationController.js
-
 import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from 'dotenv';
 dotenv.config();
-
-// 🚨 SOLUȚIA 1: Importul JSON robust, folosind require
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url); 
 const pricingData = require('../data/pricingData.json'); 
 
-// 🚨 SOLUȚIA 2: Importul serviciului de email (Export Implicit)
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
 import sendPriceEstimateEmail from '../utils/emailService.js'; 
 
-// Configurare Gemini
-const ai = new GoogleGenAI(process.env.GEMINI_API_KEY); 
-const model = "gemini-2.5-flash"; 
-export async function extractStructuredTasks(requestData) {
-  const { description, squareMeters, county, materialQuality } = requestData;
+export async function extractStructuredTasks({ description }) {
+  const sarciniValide = Object.keys(pricingData.preturi_unitare);
 
-  // Lista sarcinilor disponibile (din pricingData)
-  const sarciniValide = [
-    "Gletuire pereti",
-    "Vopsit lavabil (2 straturi)",
-    "Montat parchet laminat"
-    // poți adăuga toate sarcinile tale
-  ];
-
-  // Schema JSON care va fi returnată
-  const schema = {
-    description: "Schema pentru estimarea costurilor de renovare",
-    type: "object",
-    properties: {
-      sarcini_identificate: {
-        type: "array",
-        items: { type: "string" },
-        description: "Lista sarcinilor de lucru extrase din text"
-      }
-    },
-    required: ["sarcini_identificate"]
-  };
-
-  // Prompt pentru Gemini
-  const prompt = `
-Analizează această cerere de renovare: "${description}".
-Identifică toate sarcinile posibile din lista următoare: [${sarciniValide.join(", ")}].
-Folosește orice sinonim sau formulare apropiată, dar returnează **numai sarcinile din lista validă**.
-Suprafața este ${squareMeters} mp, județul este ${county}, calitatea este ${materialQuality}.
-Returnează un obiect JSON valid conform schemei.
-Exemplu de răspuns: { "sarcini_identificate": ["Gletuire pereti", "Vopsit lavabil (2 straturi)"] }
-  `;
+  const prompt = `Ești un expert în construcții. Analizează cererea: "${description}". 
+  Lista sarcinilor disponibile: ${sarciniValide.join(", ")}. 
+  Returnează STRICT JSON: { "sarcini_identificate": ["Nume Sarcina"] }`;
 
   try {
-    // 🚨 SCHIMBĂRILE AICI: 
-    // 1. Folosim "ai" (cum ai definit sus), nu "genAI"
-    // 2. Folosim "gemini-1.5-flash" (mai stabil pentru JSON)
-    const result = await ai.getGenerativeModel({ model: "gemini-1.5-flash" })
-      .generateContent({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: schema
-        }
-      });
+    // 🚨 ACESTA ESTE MODUL CORECT DE APEL:
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    const responseText = result.response.text();
-    console.log("✅ Răspuns Gemini:", responseText);
-    return JSON.parse(responseText);
-  } catch (error) {
-    // Folosim error.message pentru a vedea eroarea reală în terminal, nu doar {}
-    console.error("❌ Eroare Gemini reală:", error.message || error);
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text().replace(/```json/g, "").replace(/```/g, "").trim();
+    
+    console.log("✅ Gemini RAW:", text);
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("❌ Eroare Gemini reală:", err.message);
     return null;
   }
 }
+// export async function extractStructuredTasks(requestData) {
+//   const { description, squareMeters, county, materialQuality } = requestData;
+
+//   // Lista sarcinilor disponibile (din pricingData)
+//   const sarciniValide = [
+//     "Gletuire pereti",
+//     "Vopsit lavabil (2 straturi)",
+//     "Montat parchet laminat"
+//     // poți adăuga toate sarcinile tale
+//   ];
+
+//   // Schema JSON care va fi returnată
+//   const schema = {
+//     description: "Schema pentru estimarea costurilor de renovare",
+//     type: "object",
+//     properties: {
+//       sarcini_identificate: {
+//         type: "array",
+//         items: { type: "string" },
+//         description: "Lista sarcinilor de lucru extrase din text"
+//       }
+//     },
+//     required: ["sarcini_identificate"]
+//   };
+
+//   // Prompt pentru Gemini
+//   const prompt = `
+// Analizează această cerere de renovare: "${description}".
+// Identifică toate sarcinile posibile din lista următoare: [${sarciniValide.join(", ")}].
+// Folosește orice sinonim sau formulare apropiată, dar returnează **numai sarcinile din lista validă**.
+// Suprafața este ${squareMeters} mp, județul este ${county}, calitatea este ${materialQuality}.
+// Returnează un obiect JSON valid conform schemei.
+// Exemplu de răspuns: { "sarcini_identificate": ["Gletuire pereti", "Vopsit lavabil (2 straturi)"] }
+//   `;
+
+//   try {
+//     // 🚨 SCHIMBĂRILE AICI: 
+//     // 1. Folosim "ai" (cum ai definit sus), nu "genAI"
+//     // 2. Folosim "gemini-1.5-flash" (mai stabil pentru JSON)
+//     const result = await ai.getGenerativeModel({ model: "gemini-1.5-flash" })
+//       .generateContent({
+//         contents: [{ role: "user", parts: [{ text: prompt }] }],
+//         generationConfig: {
+//           responseMimeType: "application/json",
+//           responseSchema: schema
+//         }
+//       });
+
+//     const responseText = result.response.text();
+//     console.log("✅ Răspuns Gemini:", responseText);
+//     return JSON.parse(responseText);
+//   } catch (error) {
+//     // Folosim error.message pentru a vedea eroarea reală în terminal, nu doar {}
+//     console.error("❌ Eroare Gemini reală:", error.message || error);
+//     return null;
+//   }
+// }
 export function calculateFinalCost(structuredData, county) {
     const { sarcini_identificate, suprafata_mp, calitate } = structuredData;
     let costTotal = 0;
