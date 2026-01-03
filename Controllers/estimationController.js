@@ -11,85 +11,77 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 import sendPriceEstimateEmail from '../utils/emailService.js'; 
 
-export async function extractStructuredTasks({ description }) {
-  const sarciniValide = Object.keys(pricingData.preturi_unitare);
+const ListModels = async () => {
+    try {
+        const models = await genAI.ListModels();
+        console.log("modelele tale disponibile:" , models);
+    }catch(e) {
+        console.log("nu pot lista modelele");
+    }
+};
 
-  const prompt = `Ești un expert în construcții. Analizează cererea: "${description}". 
-  Lista sarcinilor disponibile: ${sarciniValide.join(", ")}. 
-  Returnează STRICT JSON: { "sarcini_identificate": ["Nume Sarcina"] }`;
 
-  try {
-    // 🚨 ACESTA ESTE MODUL CORECT DE APEL:
-    //const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text().replace(/```json/g, "").replace(/```/g, "").trim();
-    
-    console.log("✅ Gemini RAW:", text);
-    return JSON.parse(text);
-  } catch (err) {
-    console.error("❌ Eroare Gemini reală:", err.message);
-    return null;
-  }
-}
-// export async function extractStructuredTasks(requestData) {
-//   const { description, squareMeters, county, materialQuality } = requestData;
+// export async function extractStructuredTasks({ description }) {
+//   const sarciniValide = Object.keys(pricingData.preturi_unitare);
 
-//   // Lista sarcinilor disponibile (din pricingData)
-//   const sarciniValide = [
-//     "Gletuire pereti",
-//     "Vopsit lavabil (2 straturi)",
-//     "Montat parchet laminat"
-//     // poți adăuga toate sarcinile tale
-//   ];
-
-//   // Schema JSON care va fi returnată
-//   const schema = {
-//     description: "Schema pentru estimarea costurilor de renovare",
-//     type: "object",
-//     properties: {
-//       sarcini_identificate: {
-//         type: "array",
-//         items: { type: "string" },
-//         description: "Lista sarcinilor de lucru extrase din text"
-//       }
-//     },
-//     required: ["sarcini_identificate"]
-//   };
-
-//   // Prompt pentru Gemini
-//   const prompt = `
-// Analizează această cerere de renovare: "${description}".
-// Identifică toate sarcinile posibile din lista următoare: [${sarciniValide.join(", ")}].
-// Folosește orice sinonim sau formulare apropiată, dar returnează **numai sarcinile din lista validă**.
-// Suprafața este ${squareMeters} mp, județul este ${county}, calitatea este ${materialQuality}.
-// Returnează un obiect JSON valid conform schemei.
-// Exemplu de răspuns: { "sarcini_identificate": ["Gletuire pereti", "Vopsit lavabil (2 straturi)"] }
-//   `;
+//   const prompt = `Ești un expert în construcții. Analizează cererea: "${description}". 
+//   Lista sarcinilor disponibile: ${sarciniValide.join(", ")}. 
+//   Returnează STRICT JSON: { "sarcini_identificate": ["Nume Sarcina"] }`;
 
 //   try {
-//     // 🚨 SCHIMBĂRILE AICI: 
-//     // 1. Folosim "ai" (cum ai definit sus), nu "genAI"
-//     // 2. Folosim "gemini-1.5-flash" (mai stabil pentru JSON)
-//     const result = await ai.getGenerativeModel({ model: "gemini-1.5-flash" })
-//       .generateContent({
-//         contents: [{ role: "user", parts: [{ text: prompt }] }],
-//         generationConfig: {
-//           responseMimeType: "application/json",
-//           responseSchema: schema
-//         }
-//       });
-
-//     const responseText = result.response.text();
-//     console.log("✅ Răspuns Gemini:", responseText);
-//     return JSON.parse(responseText);
-//   } catch (error) {
-//     // Folosim error.message pentru a vedea eroarea reală în terminal, nu doar {}
-//     console.error("❌ Eroare Gemini reală:", error.message || error);
+//     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+//     const result = await model.generateContent(prompt);
+//     const response = await result.response;
+//     const text = response.text().replace(/```json/g, "").replace(/```/g, "").trim();
+    
+//     console.log("✅ Gemini RAW:", text);
+//     return JSON.parse(text);
+//   } catch (err) {
+//     console.error("❌ Eroare Gemini reală:", err.message);
 //     return null;
 //   }
 // }
+
+
+export async function extractStructuredTasks({ description }) {
+    // Luăm sarcinile tale din fișierul JSON de prețuri
+    const sarciniValide = Object.keys(pricingData.preturi_unitare);
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    // Forțăm versiunea stabilă v1, nu v1beta!
+    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+    const prompt = `Analizează această cerere de renovare: "${description}".
+    Alege sarcinile potrivite doar din această listă: [${sarciniValide.join(", ")}].
+    Returnează DOAR un obiect JSON valid: {"sarcini_identificate": ["Nume Sarcina"]}`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }]
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            throw new Error(data.error.message);
+        }
+
+        const text = data.candidates[0].content.parts[0].text.replace(/```json/g, "").replace(/```/g, "").trim();
+        
+        console.log("✅ Gemini HTTP RAW:", text);
+        return JSON.parse(text);
+
+    } catch (err) {
+        console.error("❌ Eroare Gemini HTTP:", err.message);
+        return null;
+    }
+}
+
+
 export function calculateFinalCost(structuredData, county) {
     const { sarcini_identificate, suprafata_mp, calitate } = structuredData;
     let costTotal = 0;
@@ -106,9 +98,6 @@ export function calculateFinalCost(structuredData, county) {
     for (const sarcina of sarcini_identificate) {
         const pret = pricingData.preturi_unitare[sarcina];
         if (!pret) continue;
-
-        // Logica de calcul a costului total și a detaliilor
-        // ... (Logica ta de calcul) ...
         const manoperaUnitara = esteJudetScump
             ? pret.cost_manopera[qualityKey]?.judete_scumpe ?? pret.cost_manopera[qualityKey]?.pret_mediu
             : pret.cost_manopera[qualityKey]?.pret_mediu;
@@ -132,13 +121,7 @@ export function calculateFinalCost(structuredData, county) {
 
     return { costTotal: Number(costTotal.toFixed(2)), detaliiCost };
 }
-
-
-/**
- * Functia 3: Ruta API care orchestrează fluxul de estimare și trimite emailul.
- */
 export async function getPriceEstimate(req, res) {
-    // Preluarea parametrilor
     const { description, squareMeters, county, materialQuality, email } = req.query;
 
     if (!description || !squareMeters || !county || !materialQuality || !email) {
@@ -155,19 +138,14 @@ export async function getPriceEstimate(req, res) {
         if (!structuredData?.sarcini_identificate?.length) {
             return res.status(200).json({ succes: false, message: 'Nu am putut identifica sarcini.' });
         }
-        
-        // 1. Calculul Costului Final
+
         const cost = calculateFinalCost(structuredData, county);
-        
-        // 2. Trimiterea Emailului (se execută înainte de return)
         const emailSent = await sendPriceEstimateEmail(
             email,
             cost.costTotal,
             cost.detaliiCost,
             description
         );
-
-        // 3. Răspunsul HTTP (cu starea trimiterii emailului)
         return res.status(200).json({
             succes: true,
             estimare_totala: cost.costTotal,
