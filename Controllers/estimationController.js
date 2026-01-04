@@ -1,5 +1,5 @@
 // controllers/estimationController.js
-import { GoogleGenerativeAI } from "@google/generative-ai";
+//import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from 'dotenv';
 dotenv.config();
 import { createRequire } from 'module';
@@ -7,80 +7,74 @@ const require = createRequire(import.meta.url);
 const pricingData = require('../data/pricingData.json'); 
 
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+//const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 import sendPriceEstimateEmail from '../utils/emailService.js'; 
 
-const ListModels = async () => {
-    try {
-        const models = await genAI.ListModels();
-        console.log("modelele tale disponibile:" , models);
-    }catch(e) {
-        console.log("nu pot lista modelele");
-    }
-};
+// const ListModels = async () => {
+//     try {
+//         const models = await genAI.ListModels();
+//         console.log("modelele tale disponibile:" , models);
+//     }catch(e) {
+//         console.log("nu pot lista modelele");
+//     }
+// };
+import fetch from "node-fetch";
 
+// În controllers/estimationController.js
 
-// export async function extractStructuredTasks({ description }) {
-//   const sarciniValide = Object.keys(pricingData.preturi_unitare);
+export async function extractStructuredTasks({ description, squareMeters, materialQuality }) {
+    console.log("🔥 APELĂM GROQ ACUM...");
+    const apiKey = process.env.GROQ_API_KEY;
+    const url = "https://api.groq.com/openai/v1/chat/completions";
 
-//   const prompt = `Ești un expert în construcții. Analizează cererea: "${description}". 
-//   Lista sarcinilor disponibile: ${sarciniValide.join(", ")}. 
-//   Returnează STRICT JSON: { "sarcini_identificate": ["Nume Sarcina"] }`;
+    const prompt = `
+      Ești un expert în devize construcții. Analizează cererea: "${description}" pentru ${squareMeters} mp.
+      
+      Categorii disponibile:
+      1. Case la Roșu: Calculează beton (0.35mc/mp), fier (70kg/mc beton), cărămidă, manoperă structură.
+      2. Interioare: Tencuit, gletuit, vopsit, parchet, electrice.
+      3. Exterioare: Pavele, izolație polistiren, decorativă, grădină.
+      4. Mobilă: Estimare pe metru liniar sau complexitate.
 
-//   try {
-//     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-//     const result = await model.generateContent(prompt);
-//     const response = await result.response;
-//     const text = response.text().replace(/```json/g, "").replace(/```/g, "").trim();
-    
-//     console.log("✅ Gemini RAW:", text);
-//     return JSON.parse(text);
-//   } catch (err) {
-//     console.error("❌ Eroare Gemini reală:", err.message);
-//     return null;
-//   }
-// }
+      Identifică categoria corectă și returnează un JSON cu:
+      - lista de sarcini
+      - materiale necesare (cantități estimate: mc, kg, mp)
+      - preț unitar estimat pentru fiecare material conform pieței din România (Beton: 400 lei/mc, Cărămidă: 500 lei/mc, Manoperă: 250 lei/mp la roșu).
 
-
-export async function extractStructuredTasks({ description }) {
-    // Luăm sarcinile tale din fișierul JSON de prețuri
-    const sarciniValide = Object.keys(pricingData.preturi_unitare);
-
-    const apiKey = process.env.GEMINI_API_KEY;
-    // Forțăm versiunea stabilă v1, nu v1beta!
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-
-    const prompt = `Analizează această cerere de renovare: "${description}".
-    Alege sarcinile potrivite doar din această listă: [${sarciniValide.join(", ")}].
-    Returnează DOAR un obiect JSON valid: {"sarcini_identificate": ["Nume Sarcina"]}`;
+      Returnează STRICT JSON:
+      {
+        "categorie": "Case la Roșu",
+        "sarcini": ["Turnare placă", "Zidărie"],
+        "materiale": [
+          {"nume": "Beton B250", "cantitate": 15, "unitate": "mc", "pret_estimat": 6000},
+          {"nume": "Fier BST500", "cantitate": 1200, "unitate": "kg", "pret_estimat": 6000}
+        ],
+        "total_estimat": 12000
+      }`;
 
     try {
         const response = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }]
+                model: "llama-3.3-70b-versatile",
+                messages: [{ role: "user", content: prompt }],
+                temperature: 0.2,
+                response_format: { type: "json_object" }
             })
         });
 
         const data = await response.json();
-
-        if (data.error) {
-            throw new Error(data.error.message);
-        }
-
-        const text = data.candidates[0].content.parts[0].text.replace(/```json/g, "").replace(/```/g, "").trim();
-        
-        console.log("✅ Gemini HTTP RAW:", text);
-        return JSON.parse(text);
-
+        return JSON.parse(data.choices[0].message.content);
     } catch (err) {
-        console.error("❌ Eroare Gemini HTTP:", err.message);
+        console.error("❌ Eroare Groq:", err.message);
         return null;
     }
 }
-
 
 export function calculateFinalCost(structuredData, county) {
     const { sarcini_identificate, suprafata_mp, calitate } = structuredData;

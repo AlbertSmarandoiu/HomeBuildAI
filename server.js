@@ -35,6 +35,9 @@ const io = new Server(httpServer, {
         methods: ["GET", "POST"]
     }
 });
+
+app.set('socketio', io);
+
 // 🚨 2. LOGICA SOCKET.IO
 io.on('connection', (socket) => {
     console.log(`Un utilizator s-a conectat: ${socket.id}`);
@@ -62,9 +65,13 @@ mongoose
 app.use("/api/pro", proRoutes);
 //app.use("/api/interior", interiorRoute); // 🚨 RUTA VECHE/DUPLICATĂ (Poate crea conflict)
 app.get("/", (req, res) => res.send(" Backend HomeBid activ!"));
+// --- FINALUL FIȘIERULUI server.js ---
 
 const PORT = process.env.PORT || 5000;
-//app.listen(PORT, () => console.log(` Server pornit pe portul ${PORT}`));
-httpServer.listen(PORT, () => {
+
+// 🚨 MODIFICARE: Folosim httpServer (așa l-ai definit tu mai sus)
+// Adăugăm '0.0.0.0' pentru a permite conexiuni de pe telefonul mobil (IP local)
+httpServer.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ Server (Express + Socket.IO) pornit pe portul ${PORT}`);
+    console.log(`🚀 Accesibil în rețea la adresa ta IP locală pe portul ${PORT}`);
 });

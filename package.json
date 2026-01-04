@@ -21,7 +21,8 @@
     "node-fetch": "^3.3.2",
     "nodemailer": "^7.0.11",
     "openai": "^6.7.0",
-    "socket.io": "^4.8.1"
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
     "@types/react": "~19.1.10",
