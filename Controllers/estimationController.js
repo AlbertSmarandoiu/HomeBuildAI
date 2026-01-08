@@ -22,35 +22,50 @@ import sendPriceEstimateEmail from '../utils/emailService.js';
 import fetch from "node-fetch";
 
 // În controllers/estimationController.js
-
-export async function extractStructuredTasks({ description, squareMeters, materialQuality }) {
+export async function extractStructuredTasks({ description, squareMeters, category, specificDetails, materialQuality }) {
     console.log("🔥 APELĂM GROQ ACUM...");
     const apiKey = process.env.GROQ_API_KEY;
     const url = "https://api.groq.com/openai/v1/chat/completions";
 
+    // 🛡️ REPARĂ EROAREA: Dacă category e undefined, punem 'interioare' default
+    const safeCategory = (category || "interioare").toUpperCase();
+
     const prompt = `
-      Ești un expert în devize construcții. Analizează cererea: "${description}" pentru ${squareMeters} mp.
+      Ești un inginer constructor expert în devize. Analizează această cerere de tip: ${safeCategory}.
       
-      Categorii disponibile:
-      1. Case la Roșu: Calculează beton (0.35mc/mp), fier (70kg/mc beton), cărămidă, manoperă structură.
-      2. Interioare: Tencuit, gletuit, vopsit, parchet, electrice.
-      3. Exterioare: Pavele, izolație polistiren, decorativă, grădină.
-      4. Mobilă: Estimare pe metru liniar sau complexitate.
+      DATE TEHNICE:
+      - Suprafață totală construită (desfășurată): ${squareMeters} mp.
+      - Descriere: "${description}".
+      - Calitate materiale: ${materialQuality}.
+      - Detalii extra: ${JSON.stringify(specificDetails || {})}.
 
-      Identifică categoria corectă și returnează un JSON cu:
-      - lista de sarcini
-      - materiale necesare (cantități estimate: mc, kg, mp)
-      - preț unitar estimat pentru fiecare material conform pieței din România (Beton: 400 lei/mc, Cărămidă: 500 lei/mc, Manoperă: 250 lei/mp la roșu).
+      INSTRUCȚIUNI DE CALCUL SPECIFICE:
 
-      Returnează STRICT JSON:
+      Dacă categoria este CASE LA ROSU:
+      1. Beton: Calculează aprox. 0.35 mc per mp construit. (Ex: 100mp -> 35mc).
+      2. Fier: Calculează aprox. 60-80 kg per mc de beton.
+      3. Cărămidă: Calculează aprox. 0.4 mc per mp construit (ziduri ext + int).
+      4. Cuie/Sârmă/Distanțieri: Adaugă un pachet estimativ.
+      5. Manoperă: Estimează între 40-70 EUR (200-350 RON) per mp construit.
+
+      Dacă categoria este EXTERIOR:
+      1. Polistiren: ${specificDetails?.suprafataFatada || 0} mp * 1.05.
+      2. Pavele: ${specificDetails?.suprafataPavele || 0} mp * 1.02.
+      3. Manoperă exterior: 100-150 RON/mp.
+
+      Dacă categoria este INTERIOARE:
+      1. Glet, Lavabilă, Sape (standard mp).
+
+      Returnează STRICT un JSON cu această structură:
       {
-        "categorie": "Case la Roșu",
-        "sarcini": ["Turnare placă", "Zidărie"],
+        "categorie": "${category}",
         "materiale": [
-          {"nume": "Beton B250", "cantitate": 15, "unitate": "mc", "pret_estimat": 6000},
-          {"nume": "Fier BST500", "cantitate": 1200, "unitate": "kg", "pret_estimat": 6000}
+          {"nume": "Beton B250", "cantitate": 0, "unitate": "mc", "pret_estimat": 0},
+          {"nume": "Oțel Beton", "cantitate": 0, "unitate": "kg", "pret_estimat": 0},
+          {"nume": "Cărămidă", "cantitate": 0, "unitate": "mc", "pret_estimat": 0},
+          {"nume": "Manoperă Structură", "cantitate": 1, "unitate": "lucrare", "pret_estimat": 0}
         ],
-        "total_estimat": 12000
+        "total_estimat": 0
       }`;
 
     try {
@@ -63,7 +78,7 @@ export async function extractStructuredTasks({ description, squareMeters, materi
             body: JSON.stringify({
                 model: "llama-3.3-70b-versatile",
                 messages: [{ role: "user", content: prompt }],
-                temperature: 0.2,
+                temperature: 0.1, // Temperatură mică pentru calcule precise
                 response_format: { type: "json_object" }
             })
         });
@@ -75,7 +90,6 @@ export async function extractStructuredTasks({ description, squareMeters, materi
         return null;
     }
 }
-
 export function calculateFinalCost(structuredData, county) {
     const { sarcini_identificate, suprafata_mp, calitate } = structuredData;
     let costTotal = 0;

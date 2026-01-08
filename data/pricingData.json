@@ -32,10 +32,10 @@
       "unitate_masura": "m2",
       "cost_manopera": {
         "Standard": { "pret_mediu": 35, "judete_scumpe": 45 },
-        "Premium": { "pret_mediu": 50, "judete_scumpe": 65 }
+        "Premium": { "pret_mediu": 45, "judete_scumpe": 55 }
       },
       "cost_material": {
-        "Economic": 50,
+        "Economic": 45,
         "Standard": 70,
         "Premium": 100
       },
