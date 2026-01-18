@@ -40,7 +40,11 @@ export async function extractStructuredTasks({ description, squareMeters, catego
       - Detalii extra: ${JSON.stringify(specificDetails || {})}.
 
       INSTRUCȚIUNI DE CALCUL SPECIFICE:
-
+      Daca categoria este mobila:
+      1. PAL/MDF: Estimează în funcție de metri liniari (aprox 2.5 mp de placă per 1 ml de dulap).
+      2. Feronerie: Calculează balamale (aprox 4 per ml) și glisiere.
+      3. Manoperă: Aproximativ 30-40% din valoarea materialelor.
+      4. Blat (dacă e bucătărie): 1 ml blat per 1 ml mobilă jos.
       Dacă categoria este CASE LA ROSU:
       1. Beton: Calculează aprox. 0.35 mc per mp construit. (Ex: 100mp -> 35mc).
       2. Fier: Calculează aprox. 60-80 kg per mc de beton.

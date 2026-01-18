@@ -31,7 +31,8 @@ app.get("/api/estimate", getPriceEstimate);
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
     cors: {
-        origin: "http://10.0.2.2:8081", // Sau adresa ta Expo/Emulator
+        // origin: "http://10.0.2.2:8081", // Sau adresa ta Expo/Emulator
+        origin:"*",
         methods: ["GET", "POST"]
     }
 });
@@ -54,23 +55,27 @@ io.on('connection', (socket) => {
         console.log(`Un utilizator s-a deconectat: ${socket.id}`);
     });
 });
+// mongoose
+//   .connect(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/renovari", {
+//     useNewUrlParser: true,
+//     useUnifiedTopology: true,
+//   })
+//   .then(() => console.log("✅ Conectat la MongoDB!"))
+//   .catch((err) => console.log("❌ Eroare MongoDB:", err));
+
 mongoose
-  .connect(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/renovari", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log("✅ Conectat la MongoDB!"))
-  .catch((err) => console.log("❌ Eroare MongoDB:", err));
+  .connect(process.env.MONGO_URI) // Versiunile noi nu mai au nevoie de useNewUrlParser sau useUnifiedTopology
+  .then(() => console.log("✅ Conectat la MongoDB Atlas (Cloud)!"))
+  .catch((err) => {
+    console.log("❌ Eroare MongoDB:", err.message);
+  });
 
 app.use("/api/pro", proRoutes);
-//app.use("/api/interior", interiorRoute); // 🚨 RUTA VECHE/DUPLICATĂ (Poate crea conflict)
+
 app.get("/", (req, res) => res.send(" Backend HomeBid activ!"));
-// --- FINALUL FIȘIERULUI server.js ---
 
 const PORT = process.env.PORT || 5000;
 
-// 🚨 MODIFICARE: Folosim httpServer (așa l-ai definit tu mai sus)
-// Adăugăm '0.0.0.0' pentru a permite conexiuni de pe telefonul mobil (IP local)
 httpServer.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ Server (Express + Socket.IO) pornit pe portul ${PORT}`);
     console.log(`🚀 Accesibil în rețea la adresa ta IP locală pe portul ${PORT}`);

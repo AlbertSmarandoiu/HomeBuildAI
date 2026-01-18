@@ -7,13 +7,15 @@
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
-  "dependencies": {  
+  "dependencies": {
     "@google/genai": "^1.33.0",
     "@google/generative-ai": "^0.24.1",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
+    "expo-device": "~8.0.10",
     "expo-image-picker": "^17.0.8",
+    "expo-notifications": "~0.32.16",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.20.0",

@@ -80,13 +80,16 @@ export async function createRequest(req, res) {
         );
 
         // 7️⃣ NOTIFICARE REAL-TIME (Socket.io)
-        const io = req.app.get('socketio');
+        const io = req.app.get('socketio'); 
+
         if (io) {
             io.emit('new_job_available', {
-                message: "🚀 S-a publicat o nouă lucrare!",
-                categorie: request.category,
-                detalii: `${request.squareMeters} mp în ${request.county}`
+                title: "🏗️ Lucrare Nouă!",
+                message: `S-a publicat o lucrare de tip ${request.category} în ${request.county}.`,
+                category: request.category,
+                total: finalTotal
             });
+            console.log("📢 Notificare trimisă către toți constructorii!");
         }
 
         res.status(201).json({ 
