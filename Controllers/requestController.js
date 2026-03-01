@@ -1,7 +1,9 @@
 import Request from '../models/WorkRequest.js';
-import { extractStructuredTasks, calculateFinalCost } from './estimationController.js';
 import sendPriceEstimateEmail from '../utils/emailService.js';
 import User from '../models/user.js';
+import { extractMaterialsFromAI } from '../services/aiService.js';
+import { calculateEstimate } from '../services/estimationService.js';
+
 export async function createRequest(req, res) {
     console.log("🚀 A fost apelată funcția createRequest!");
 
@@ -12,60 +14,60 @@ export async function createRequest(req, res) {
             materialQuality, specificDetails, name, phone, email 
         } = req.body;
 
-        // 2️⃣ GĂSIRE UTILIZATOR (Avem nevoie de email-ul lui pentru Groq și Email Service)
+        // 2️⃣ GĂSIRE UTILIZATOR
         const user = await User.findById(req.user.id);
         if (!user) return res.status(404).json({ message: "Utilizator inexistent" });
-        const userEmail = user.email; // DEFINIM variabila aici, sus!
+        const userEmail = user.email;
 
-        // 3️⃣ SALVAREA ÎN BAZA DE DATE
+        // 3️⃣ SALVAREA ÎN BAZA DE DATE (Asigurăm o categorie default)
+        const finalCategory = category || "lucrari interioare";
+
         const request = await Request.create({
             description,
-            squareMeters,
-            category: category || "interioare",
+            squareMeters: Number(squareMeters),
+            category: finalCategory,
             county,
             materialQuality,
             specificDetails: specificDetails || {},
             name,
             phone,
-            email, // Email-ul opțional din formular
+            email, 
             userId: req.user.id
         });
 
         console.log(`📧 Email utilizator: ${userEmail} | Categorie: ${request.category}`);
 
-        // 4️⃣ ESTIMAREA AI (Groq)
-        const structured = await extractStructuredTasks({
-            description: request.description,
-            squareMeters: request.squareMeters,
-            category: request.category,
-            county: request.county,
-            materialQuality: request.materialQuality,
-            specificDetails: request.specificDetails
-        });
-
-        // 5️⃣ PREGĂTIRE DATE FINALE
+        // 4️⃣ EXTRAGEM MATERIALE DIN AI
         let finalTotal = 0;
         let finalDetails = [];
 
-        if (structured && structured.materiale) {
-            console.log("✅ Groq a calculat cu succes!");
-            finalTotal = structured.total_estimat;
-            finalDetails = structured.materiale.map(m => ({
-                sarcina: m.nume,
-                manopera: m.nume.toLowerCase().includes('manoperă') ? m.pret_estimat : 0,
-                materiale: !m.nume.toLowerCase().includes('manoperă') ? m.pret_estimat : 0,
-                total: m.pret_estimat
-            }));
-        } else {
-            console.warn('⚠️ Fallback la logica locală.');
-            const fallbackData = {
-                sarcini_identificate: request.description.toLowerCase().includes('glet') ? ['Gletuire pereti'] : ['Vopsit lavabil (2 straturi)'],
-                suprafata_mp: Number(request.squareMeters),
-                calitate: request.materialQuality
-            };
-            const fallbackCost = calculateFinalCost(fallbackData, request.county);
-            finalTotal = fallbackCost.costTotal;
-            finalDetails = fallbackCost.detaliiCost;
+        try {
+            const aiResult = await extractMaterialsFromAI({
+                description: request.description,
+                squareMeters: request.squareMeters,
+                category: request.category
+            });
+
+            if (aiResult && aiResult.materiale) {
+                console.log("✅ AI a extras materialele. Calculăm estimarea...");
+                
+                // 5️⃣ REPARAT: Trimitem materiale, suprafața ȘI categoria
+                const estimate = await calculateEstimate(
+                    aiResult.materiale, 
+                    request.squareMeters, 
+                    request.category
+                );
+                
+                finalTotal = estimate.totalGeneral;
+                finalDetails = estimate.detalii;
+            } else {
+                throw new Error("AI nu a returnat materiale valide.");
+            }
+
+        } catch (aiError) {
+            console.error("⚠️ Eroare la procesarea AI/Estimare:", aiError.message);
+            finalTotal = 0;
+            finalDetails = [{ sarcina: "Eroare calcul: " + aiError.message, total: 0 }];
         }
 
         // 6️⃣ TRIMITERE EMAIL
@@ -79,9 +81,8 @@ export async function createRequest(req, res) {
             request.materialQuality
         );
 
-        // 7️⃣ NOTIFICARE REAL-TIME (Socket.io)
+        // 7️⃣ NOTIFICARE REAL-TIME
         const io = req.app.get('socketio'); 
-
         if (io) {
             io.emit('new_job_available', {
                 title: "🏗️ Lucrare Nouă!",
@@ -99,7 +100,7 @@ export async function createRequest(req, res) {
         });
 
     } catch (error) {
-        console.error("❌ Eroare în createRequest:", error);
+        console.error("❌ Eroare critică în createRequest:", error);
         res.status(500).json({ message: "Eroare la procesarea cererii." });
     }
 }

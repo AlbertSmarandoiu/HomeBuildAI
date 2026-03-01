@@ -1,129 +1,101 @@
-//routes/interior/js
-import express from "express";
-import WorkRequest from "../models/WorkRequest.js";
-import { createRequest } from '../Controllers/requestController.js'; // Importă funcția nouă
-//import { protect } from '../middleware/authMiddleware.js'; // Middleware-ul de login
-import verifyToken from '../middleware/authMiddleware.js';
-const router = express.Router();
-import { extractStructuredTasks, calculateFinalCost } from '../Controllers/estimationController.js';
-import sendPriceEstimateEmail from '../utils/emailService.js';
-router.post("/", verifyToken, createRequest);
-// router.post("/", verifyToken, async (req, res) => {
-//     console.log("!!! AM INTRAT ÎN RUTA CORECTĂ !!!");
+
+// import express from "express";
+// import WorkRequest from "../models/WorkRequest.js";
+// import { createRequest } from '../Controllers/requestController.js'; 
+// import verifyToken from '../middleware/authMiddleware.js';
+// const router = express.Router();
+// // import { extractStructuredTasks, calculateFinalCost } from '../Controllers/estimationController.js';
+// // import sendPriceEstimateEmail from '../utils/emailService.js';
+
+// // 1. Ruta de creare cerere
+// router.post("/", verifyToken, createRequest);
+
+// // 2. Ruta de filtrare (Aici am curățat totul)
+// router.get("/filtered", async (req, res) => {
 //     try {
-//         console.log("✅ CERERE PRIMITĂ ȘI AUTENTIFICATĂ CU SUCCES!");
-//         const postingUserId = req.user.id;
-//         const userEmail = req.user.email; // Presupunem că emailul vine din token/middleware
+//         const skillsQuery = req.query.skills; 
 
-//         const {
-//             description,
-//             squareMeters,
-//             county,
-//             materialQuality,
-//             images,
-//             name,
-//             phone,
-//             email // Emailul introdus manual în formular (dacă există)
-//         } = req.body;
-
-//         // 1. VALIDARE
-//         if (!description || !squareMeters || !county || !materialQuality || !postingUserId) {
-//             return res.status(400).json({ message: "Date incomplete!" });
+//         if (!skillsQuery) {
+//              console.log("⚠️ Atenție: Nu au fost trimise skill-uri în URL.");
+//              return res.status(200).json([]); 
 //         }
 
-//         // 2. CREAREA ȘI SALVAREA CERERII
-//         const newRequest = new InteriorRequest({
-//             title: "Lucrare interioară",
-//             description,
-//             squareMeters,
-//             county,
-//             materialQuality,
-//             images: images || [],
-//             category: "interioare",
-//             name,
-//             phone,
-//             email,
-//             userId: postingUserId,
-//             date: new Date(),
-//         });
+//         // Procesăm skill-urile și forțăm litere mici
+//         const proSkills = skillsQuery.split(',').map(s => s.trim().toLowerCase()); 
+        
+//         console.log("🔍 Căutăm joburi pentru categoriile:", proSkills);
 
-//         await newRequest.save();
-//         console.log("✅ Cerere salvată în DB. Pornesc estimarea AI...");
+//         const requests = await WorkRequest.find({
+//             category: { $in: proSkills }, 
+//             status: 'pending' 
+//         }).sort({ createdAt: -1 });
 
-//         // ---------------------------------------------------------
-//         // 🔥 LOGICA NOUĂ: ESTIMARE ȘI EMAIL
-//         // ---------------------------------------------------------
-//         try {
-//             // A. Extracție sarcini cu Gemini
-//             const structured = await extractStructuredTasks({
-//                 description,
-//                 squareMeters: parseFloat(squareMeters),
-//                 county,
-//                 materialQuality
-//             });
-
-//             if (structured && structured.sarcini_identificate?.length > 0) {
-//                 // B. Calcul cost
-//                 const cost = calculateFinalCost(structured, county);
-
-//                 // C. Trimitere email
-//                 // Folosim emailul din contul de utilizator sau cel din formular
-//                 const targetEmail = userEmail || email; 
-                
-//                 console.log(`📧 Trimit email către: ${targetEmail}`);
-                
-//                 await sendPriceEstimateEmail(
-//                     targetEmail,
-//                     cost.costTotal,
-//                     cost.detaliiCost,
-//                     description
-//                 );
-//             } else {
-//                 console.log("⚠️ Gemini nu a putut identifica sarcini clare.");
-//             }
-//         } catch (aiError) {
-//             console.error("❌ Eroare la procesarea AI/Email (cererea a fost totuși salvată):", aiError);
-//         }
-//         // ---------------------------------------------------------
-
-//         // 3. RĂSPUNS CĂTRE FRONT-END
-//         res.status(201).json({
-//             message: "Cererea a fost salvată și estimarea este în curs de trimitere!",
-//             request: newRequest,
-//         });
+//         console.log("✅ Cereri găsite în DB:", requests.length);
+//         res.status(200).json(requests);
 
 //     } catch (error) {
-//         console.error("Eroare la salvare:", error);
-//         res.status(500).json({ message: "Eroare la salvare!", error });
+//         console.error("❌ Eroare la filtrare:", error);
+//         res.status(500).json({ message: "Eroare server la filtrare." });
 //     }
 // });
+
+// // 3. Ruta de numărare cereri
+// router.get("/count/:userId", async (req, res) => {
+//     try {
+//         const count = await WorkRequest.countDocuments({ 
+//             userId: req.params.userId
+//         });
+//         res.status(200).json({ count }); 
+//     } catch (error) {
+//         res.status(500).json({ message: "Eroare la numărare." });
+//     }
+// });
+
+// export default router;
+import express from "express";
+import WorkRequest from "../models/WorkRequest.js";
+import { createRequest } from '../Controllers/requestController.js'; 
+import verifyToken from '../middleware/authMiddleware.js';
+
+const router = express.Router();
+
+// 1. Ruta de creare cerere
+router.post("/", verifyToken, createRequest);
+
+// 2. Ruta de filtrare
 router.get("/filtered", async (req, res) => {
     try {
-       
         const skillsQuery = req.query.skills; 
+
         if (!skillsQuery) {
              return res.status(200).json([]); 
         }
-        const proSkills = skillsQuery.split(','); 
+
+        const proSkills = skillsQuery.split(',')
+            .map(s => s.trim().toLowerCase()); 
+        
         const requests = await WorkRequest.find({
             category: { $in: proSkills }, 
-        }).sort({ date: -1 });
-        console.log("Număr cereri returnate de DB:", requests.length); // 🚨 Adaugă acest log
+            status: 'pending' 
+        }).sort({ createdAt: -1 });
+
         res.status(200).json(requests);
 
     } catch (error) {
-        console.error("Eroare la preluarea cererilor filtrate:", error);
         res.status(500).json({ message: "Eroare server la filtrare." });
     }
 });
+
+// 3. Ruta de numărare cereri
 router.get("/count/:userId", async (req, res) => {
     try {
         const count = await WorkRequest.countDocuments({ 
             userId: req.params.userId
         });
-        res.status(200).json({ count }); // ✅ Răspuns JSON de succes
+        res.status(200).json({ count }); 
     } catch (error) {
-        // ... (Logică de eroare JSON)
+        res.status(500).json({ message: "Eroare la numărare." });
     }
 });
+
 export default router;

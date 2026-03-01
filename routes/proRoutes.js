@@ -4,7 +4,7 @@ import Pro from "../models/Pro.js";
 import jwt from 'jsonwebtoken';
 const router = express.Router();
 
-
+import WorkRequest from "../models/WorkRequest.js"; // Asigură-te că imporți modelul de lucrări
 // routes/proRoutes.js (Adaugă la finalul fișierului)
 
 import verifyToken from '../middleware/authMiddleware.js'; // Pentru rutele protejate
@@ -21,7 +21,22 @@ router.get("/:proId", async (req, res) => {
         res.status(500).json({ message: "Eroare la preluarea profilului." });
     }
 });
+router.get("/:proId/jobs", async (req, res) => {
+    try {
+        const pro = await Pro.findById(req.params.proId);
+        if (!pro) return res.status(404).json({ message: "Pro negăsit" });
 
+        // Căutăm orice lucrare a cărei categorie se află în lista de skills a pro-ului
+        // Ex: Dacă pro are skills: ["interioare", "exterioare"], le va vedea pe ambele.
+        const jobs = await WorkRequest.find({
+            category: { $in: pro.skills } 
+        });
+
+        res.status(200).json(jobs);
+    } catch (error) {
+        res.status(500).json({ message: "Eroare server la filtrare" });
+    }
+});
 // 2. PUT/PATCH: Modificare Profil (Protejat)
 router.patch("/:proId", verifyToken, async (req, res) => {
     // Verifică dacă ID-ul din token corespunde ID-ului din rută
