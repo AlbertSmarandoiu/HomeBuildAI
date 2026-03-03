@@ -23,17 +23,24 @@ const dedemanLinks = {
 // services/estimationService.js
 // services/estimationService.js
 export async function calculateEstimate(materialeAi, squareMeters, category) {
-    const safeCategory = (category || "interioare").toLowerCase().trim();
+    const safeCategory = (category || "lucrari interioare").toLowerCase().trim();
     const catalogCategorie = materialPrices[safeCategory] || {};
     
     let totalGeneral = 0;
     const detalii = [];
 
+    // Verificăm dacă avem materiale primite de la AI
+    if (!materialeAi || !Array.isArray(materialeAi)) {
+        return { totalGeneral: 0, detalii: [] };
+    }
+
     for (const mat of materialeAi) {
-        // Căutăm o potrivire parțială (ex: dacă "Glet" se regăsește în "Glet de finisare")
+        const numeMaterialAI = mat.nume.toLowerCase();
+
+        // Căutăm cea mai bună potrivire în catalog
         const keyInCatalog = Object.keys(catalogCategorie).find(key => 
-            mat.nume.toLowerCase().includes(key.toLowerCase()) || 
-            key.toLowerCase().includes(mat.nume.toLowerCase())
+            numeMaterialAI.includes(key.toLowerCase()) || 
+            key.toLowerCase().includes(numeMaterialAI)
         );
 
         const pretUnitar = keyInCatalog ? catalogCategorie[keyInCatalog] : 0;
@@ -43,17 +50,17 @@ export async function calculateEstimate(materialeAi, squareMeters, category) {
             totalGeneral += totalSarcina;
 
             detalii.push({
-                sarcina: keyInCatalog || mat.nume,
-                cantitate: mat.cantitate,
+                sarcina: keyInCatalog, // Folosim numele profesional din JSON-ul tău
+                cantitate: Number(mat.cantitate.toFixed(2)),
                 pretUnitar: pretUnitar,
                 total: Number(totalSarcina.toFixed(2))
             });
         } else {
-            console.log(`⚠️ Lipsă preț în JSON pentru: "${mat.nume}"`);
+            console.log(`⚠️ Lipsă preț în catalogul "${safeCategory}" pentru: "${mat.nume}"`);
         }
     }
-    // ... return total ...
-    const neprevazute = totalGeneral * 0.1;
+
+    const neprevazute = totalGeneral * 0.1; // Marjă de 10%
     return {
         totalGeneral: Number((totalGeneral + neprevazute).toFixed(2)),
         detalii
