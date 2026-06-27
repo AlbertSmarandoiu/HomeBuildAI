@@ -11,7 +11,7 @@ export async function createRequest(req, res) {
         // 1️⃣ EXTRAGEREA DATELOR
         const { 
             category, description, squareMeters, county, 
-            materialQuality, specificDetails, name, phone, email 
+            materialQuality, specificDetails, name, phone, email, images
         } = req.body;
 
         // 2️⃣ GĂSIRE UTILIZATOR
@@ -32,6 +32,7 @@ export async function createRequest(req, res) {
             name,
             phone,
             email, 
+            images: images || [],
             userId: req.user.id
         });
 
@@ -55,7 +56,8 @@ export async function createRequest(req, res) {
                 const estimate = await calculateEstimate(
                     aiResult.materiale, 
                     request.squareMeters, 
-                    request.category
+                    request.category,
+                    request.materialQuality // 🌟 NOU: Trimitem și calitatea materialelor
                 );
                 
                 finalTotal = estimate.totalGeneral;
@@ -81,16 +83,16 @@ export async function createRequest(req, res) {
             request.materialQuality
         );
 
-        // 7️⃣ NOTIFICARE REAL-TIME
+        // 7️ NOTIFICARE REAL-TIME
         const io = req.app.get('socketio'); 
         if (io) {
             io.emit('new_job_available', {
-                title: "🏗️ Lucrare Nouă!",
+                title: "Lucrare Nouă!",
                 message: `S-a publicat o lucrare de tip ${request.category} în ${request.county}.`,
                 category: request.category,
                 total: finalTotal
             });
-            console.log("📢 Notificare trimisă către toți constructorii!");
+            console.log("Notificare trimisă către toți constructorii!");
         }
 
         res.status(201).json({ 
@@ -100,7 +102,7 @@ export async function createRequest(req, res) {
         });
 
     } catch (error) {
-        console.error("❌ Eroare critică în createRequest:", error);
+        console.error(" Eroare critică în createRequest:", error);
         res.status(500).json({ message: "Eroare la procesarea cererii." });
     }
 }

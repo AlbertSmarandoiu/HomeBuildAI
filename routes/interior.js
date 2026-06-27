@@ -85,7 +85,32 @@ router.get("/filtered", async (req, res) => {
         res.status(500).json({ message: "Eroare server la filtrare." });
     }
 });
+// 2. Ruta de filtrare
+// router.get("/filtered", async (req, res) => {
+//     try {
+//         const skillsQuery = req.query.skills; 
 
+//         if (!skillsQuery) {
+//              return res.status(200).json([]); 
+//         }
+
+//         const proSkills = skillsQuery.split(',').map(s => s.trim().toLowerCase()); 
+        
+//         // 🌟 MODIFICAREA E AICI:
+//         const requests = await WorkRequest.find({
+//             category: { $in: proSkills }, 
+//             status: 'pending' 
+//         })
+//         .populate('userId', 'profilePicture name') // <-- ASTA ADUCE POZA ȘI NUMELE!
+//         .sort({ createdAt: -1 });
+
+//         res.status(200).json(requests);
+
+//     } catch (error) {
+//         console.error("❌ Eroare la filtrare:", error);
+//         res.status(500).json({ message: "Eroare server la filtrare." });
+//     }
+// });
 // 3. Ruta de numărare cereri
 router.get("/count/:userId", async (req, res) => {
     try {

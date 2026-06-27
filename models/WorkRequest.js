@@ -8,11 +8,7 @@ const WorkRequestSchema = new mongoose.Schema({
   squareMeters: { type: Number, required: true },
   county: { type: String, required: true },
   materialQuality: { type: String, required: true },
-  
-  // Detalii extra pentru exterior sau case la rosu
   specificDetails: { type: Object, default: {} },
-
-  // Câmpuri opționale care apăreau în formularul tău de interior
   name: { type: String },
   phone: { type: String },
   email: { type: String }, // email-ul de contact din formular

@@ -1,188 +1,312 @@
 {
-  "lucrari interioare": {
-    "Curatat glet pereti/tavane": 23,
-    "Desfacut tencuieli interior": 35,
-    "Glet de ipsos-finisat": 20,
-    "Glet de finisare": 24,
-    "Tencuieli interioare driscuite": 39,
-    "Zugraveli lavabile (2 straturi)": 30,
-    "Sapa egalizare": 38,
-    "Sapa autonivelanta": 25,
-    "Montaj parchet laminat": 20,
-    "Pardoseli gresie/faianta": 75,
-    "Placari pereti Gips-Carton": 44,
-    "Placari tavane Gips-Carton": 58,
-    "Montaj usi interior": 150,
-    "Glafuri-tencuieli": 58,
-    "Tinci pereti": 18
+  "interioare": {
+    "tencuiala": {
+      "nume": "Tencuială pereți (grosieră)",
+      "unitate": "mp",
+      "pret_material": 25.00,
+      "pret_manopera": 39.00
+    },
+    "Usi interiore": {
+      "nume": "Montaj uși interioare",
+      "unitate": "buc",
+      "pret_material": 0.00,
+      "pret_manopera": 150.00
+    },
+    "Izolatie cu vata minerala": {
+      "nume": "Izolație cu vată minerală (pereți sau tavane)",
+      "unitate": "mp",
+      "pret_material": 25.00,
+      "pret_manopera": 25.00
+    },
+    "parchet": {
+      "nume": "Montaj parchet laminat + plintă",
+      "unitate": "mp",
+      "pret_material": 45.00,
+      "pret_manopera": 20.00
+    },
+    "gresie_faianta": {
+      "nume": "Montaj gresie sau faianță",
+      "unitate": "mp",
+      "pret_material": 60.00,
+      "pret_manopera": 70.00
+    },
+    "Sapa autonivelanta": {
+      "nume": "Turnare șapă autonivelantă",
+      "unitate": "mp",
+      "pret_material": 35.00,
+      "pret_manopera": 25.00
+    },
+    "Sapa egalizare": {
+      "nume": "Turnare șapă de egalizare",
+      "unitate": "mp",
+      "pret_material": 25.00,
+      "pret_manopera": 35.00
   },
-  "case la rosu": {
-    "Zidarie caramida mare (30/25 cm)": 300,
-    "Zidarie BCA": 300,
-    "Turnat beton cu cifa si pompa": 125,
-    "Armare planseu cu fier (per KG)": 5,
-    "Cofrat panouri lemn/doka": 63,
-    "Sapatura manuala": 370,
-    "Trasat fundatie": 23,
-    "Beton B250 (Material)": 480,
-    "Otel Beton (Material/KG)": 5.2,
-    "Caramida Porotherm (Material/MC)": 510,
-    "Tigla metalica (Material/MP)": 48
+  "Glet de ipsos-finisat": {
+      "nume": "Glet de ipsos - finisat",
+      "unitate": "mp",
+      "pret_material": 14.00,
+      "pret_manopera": 24.00
+    },
+    "Glet de ipsos-încărcare": {
+      "nume": "Glet de ipsos - încărcare",
+      "unitate": "mp",
+      "pret_material": 12.00,
+      "pret_manopera": 20.00    
   },
-  "lucrari exterioare": {
-    "Placare cu polistiren (manopera+adeziv)": 75,
-    "Tencuieli decorative": 38,
-    "Vopsea lavabila exterior": 34,
-    "Placare vata bazaltica": 90,
-    "Coltar cu plasa": 22,
-    "Polistiren EPS80 10cm (Material/MP)": 36,
-    "Vata Bazaltica 10cm (Material/MP)": 85
+  "Tinciuiala decorativa": {
+      "nume": "Tencuială decorativă (model simplu)",
+      "unitate": "mp",
+      "pret_material": 18.00,
+      "pret_manopera": 20.00
+    },
+    "Tencuieli interioare driscuite pereti": {
+      "nume": "Tencuieli interioare driscuite pereți",
+      "unitate": "mp",
+      "pret_material": 22.00,
+      "pret_manopera": 39.00
+    },
+    "Zugraveli lavabile (2 straturi)": {
+      "nume": "Zugrăveli lavabile (2 straturi)",
+      "unitate": "mp",
+      "pret_material": 11.50,
+      "pret_manopera": 22.00
+    },
+    "Montaj tapet": {
+      "nume": "Montaj tapet",
+      "unitate": "mp",
+      "pret_material": 20.00,
+      "pret_manopera": 30.00
+    },
+    "Desfacut gresie, faianta, parchet": {
+      "nume": "Desfacut gresie, faianță sau parchet",
+      "unitate": "mp",
+      "pret_material": 0.00,
+      "pret_manopera": 24.00
+    },
+    "Desfaceri pardoseli mozaic": {
+      "nume": "Desfaceri pardoseli mozaic",
+      "unitate": "mp",
+      "pret_material": 0.00,
+      "pret_manopera": 40.00
+    },
+    "Demolat pereti zidarie": {
+      "nume": "Demolat pereți din zidărie",
+      "unitate": "mc",
+      "pret_material": 0.00,
+      "pret_manopera": 100.00
+    },
+    "Demontat parchet laminat": {
+      "nume": "Demontat parchet laminat",
+      "unitate": "mp",
+      "pret_material": 0.00,
+      "pret_manopera": 13.00
+    },
+    "Demontat parchet masiv": {
+      "nume": "Demontat parchet masiv",
+      "unitate": "mp",
+      "pret_material": 0.00,
+      "pret_manopera": 22.00
+    },
+    "Demontat linoleum": {
+      "nume": "Demontat linoleum",
+      "unitate": "mp",
+      "pret_material": 0.00,
+      "pret_manopera": 13.00
+    },
+    "Desfacut sape": {
+      "nume": "Desfacut șapă",
+      "unitate": "mp",
+      "pret_material": 0.00,
+      "pret_manopera": 60.00
+    },
+    "Evacuare moloz": {
+      "nume": "Evacuare moloz",
+      "unitate": "mc",
+      "pret_material": 0.00,
+      "pret_manopera": 350.00
+    },
+    "Incarcare moloz in saci/ manipulare": {
+      "nume": "Încărcare moloz în saci și manipulare",
+      "unitate": "sac",
+      "pret_material": 0.00,
+      "pret_manopera": 15.00
+    }
   },
-  "instalatii": {
-    "Montat tablou electric": 500,
-    "Instalatie sanitara baie": 350,
-    "Instalatie sanitara bucatarie": 2000,
-    "Montat centrala termica": 1150,
-    "Montat calorifer": 320,
-    "Montat obiecte sanitare": 250
+  "exterior": {
+    "Izolație exterioară cu polistiren 10cm": {
+      "nume": "Izolație exterioară cu polistiren 10cm",
+      "unitate": "mp",
+      "pret_material": 55.00,
+      "pret_manopera": 60.00
+    },
+    "Tencuieli exterioare": {
+      "nume": "Tencuială decorativă (model simplu)",
+      "unitate": "mp",
+      "pret_material": 30.00,
+      "pret_manopera": 35.00
+    },
+    "Coltar cu plasa": {
+      "nume": "Montaj colțar cu plasă pentru tencuială",
+      "unitate": "ml",
+      "pret_material": 15.00,
+      "pret_manopera": 25.00
+    },
+    "Profil de soclu": {
+      "nume": "Montaj profil de soclu pentru tencuială",
+      "unitate": "ml",
+      "pret_material": 20.00,
+      "pret_manopera": 25.00
+    },
+    "Placare vata bazaltica 10cm": {
+      "nume": "Placare vată bazaltică 10cm",
+      "unitate": "mp",
+      "pret_material": 70.00,
+      "pret_manopera": 90.00
+    },
+    "pavaj": {
+      "nume": "Montaj pavele + pregătire teren",
+      "unitate": "mp",
+      "pret_material": 65.00,
+      "pret_manopera": 55.00
+    },
+    "Fixare plasa, masa spaclu, adeziv": {
+      "nume": "Fixare plasă, masă șpaclu și adeziv pentru tencuială",
+      "unitate": "mp",
+      "pret_material": 38.00,
+      "pret_manopera": 45.00
+    },
+    "gazon": {
+      "nume": "Amenajare rulouri gazon",
+      "unitate": "mp",
+      "pret_material": 28.00,
+      "pret_manopera": 15.00
+    }
+  },
+  "caselarosu": {
+    "sapatura": {
+      "nume": "Săpătură fundație (mecanizată)",
+      "unitate": "hour",
+      "pret_material": 0.00,
+      "pret_manopera": 270.00
+    },
+    "beton": {
+      "nume": "Turnare beton structură (B250)",
+      "unitate": "mc",
+      "pret_material": 380.00,
+      "pret_manopera": 80.00
+    },
+    "caramida": {
+      "nume": "Zidărie cărămidă",
+      "unitate": "mc",
+      "pret_material": 420.00,
+      "pret_manopera": 300.00
+    },
+    "acoperis": {
+      "nume": "Structură șarpantă lemn + țiglă metalică",
+      "unitate": "mp",
+      "pret_material": 150.00,
+      "pret_manopera": 150.00
+    },
+    "Hidroizolatie pensulabila (1 mana)": {
+      "nume": "Hidroizolație pensulabilă (1 mână)",
+      "unitate": "mp",
+      "pret_material": 25.00,
+      "pret_manopera": 30.00  
+  },
+  "Zidarie BCA": {
+      "nume": "Zidărie BCA",
+      "unitate": "mc",
+      "pret_material": 350.00,
+      "pret_manopera": 300.00
+  },
+  "Preparare mortar zidarie": {
+      "nume": "Preparare mortar pentru zidărie",
+      "unitate": "mc",
+      "pret_material": 70.00,
+      "pret_manopera": 80.00
+  },
+  "Executat panouri cofraj din lemn": {
+      "nume": "Executat panouri cofraj din lemn",
+      "unitate": "mp",
+      "pret_material": 40.00,
+      "pret_manopera": 50.00
+  },
+  "Decofrat placa beton": {
+      "nume": "Decofrat placă beton",
+      "unitate": "mp",
+      "pret_material": 0.00,
+      "pret_manopera": 20.00
+  },
+  "Umplut pietris si tasat": {
+      "nume": "Umplut cu pietriș și tasat",
+      "unitate": "mp",
+      "pret_material": 10.00,
+      "pret_manopera": 10.00
+  },
+  "Cofrat planseu cu scandura": {
+      "nume": "Cofrat planșeu cu scândură",
+      "unitate": "mp",
+      "pret_material": 40.00,
+      "pret_manopera": 80.00
+  },
+  "Cofrat planseu cu doka": {
+      "nume": "Cofrat planșeu cu doka",
+      "unitate": "mp",
+      "pret_material": 25.00,
+      "pret_manopera": 50.00
+  },
+  "Armare planseu cu fier beton": {
+      "nume": "Armare planșeu cu fier beton",
+      "unitate": "kg",
+      "pret_material": 4.00,
+      "pret_manopera": 5.00
+  },
+  "Armare planseu cu plasa sudata": {
+      "nume": "Armare planșeu cu plasă sudată",
+      "unitate": "mp",
+      "pret_material": 15.00,
+      "pret_manopera": 15.00
+  },
+  "Trasat fundatie": {
+      "nume": "Trasat fundație",
+      "unitate": "mp",
+      "pret_material": 0.00,
+      "pret_manopera": 20.00
+  },
+  "tigla metalica": {
+      "nume": "Montaj țiglă metalică",
+      "unitate": "mp",
+      "pret_material": 120.00,
+      "pret_manopera": 150.00 
+  },
+  "tigla ceramica": {
+      "nume": "Montaj țiglă ceramică",
+      "unitate": "mp",
+      "pret_material": 100.00,
+      "pret_manopera": 120.00 
+  }
   },
   "mobila": {
-    "pat": 90,
-    "dulap": 80,
-    "birou": 300,
-    "scaun": 500,
-    "comoda": 100,
-    "noptiera": 150,
-    "masuta cafea": 400,
-    "canapea": 3000,
-    "fotoliu": 800,
-    "masa": 500,
-    "raft": 200,
-    "biblioteca": 600,
-    "birou de colt":  350,
-    "dulap de colt": 80,
-    "pat de colt": 90,
-    "canapea extensibila": 1500,
-    "masuta de cafea extensibila": 400,      
-    "mobila de baie": 40,
-    "mobila de bucatarie": 50, 
-      "mobila de living": 60,
-      "mobila de dormitor": 70,  
-      "mobila de hol": 99,
-      "mobila de exterior": 120
-  },
-  "consumabile_tehnice": {
-  "Saci Glet (20kg)": 45,
-  "Saci Tencuiala (30kg)": 28,
-  "Galeata Lavabila (15L)": 250,
-  "Beton B250 (mc)": 480,
-  "Otel Beton (kg)": 5.2,
-  "Caramida Porotherm (mc)": 510,
-  "Tigla metalica (mp)": 48,
-  "Polistiren EPS80 10cm (mp)": 36, 
-  "Vata Bazaltica 10cm (mp)": 85,
-  "Adeziv pentru polistiren (kg)": 15,
-  "Adeziv pentru gresie/faianta (kg)": 20,
-  "Adeziv pentru gips-carton (kg)": 18,
-  "Adeziv pentru parchet (kg)": 25,
-  "Adeziv pentru lemn (kg)": 30,
-  "Adeziv pentru metal (kg)": 35,
-  "Adeziv pentru sticla (kg)": 40,
-  "Adeziv pentru plastic (kg)": 22,
-  "Adeziv pentru piatra (kg)": 28,
-  "Adeziv pentru beton (kg)": 32,
-  "Adeziv pentru caramida (kg)": 26,
-  "Adeziv pentru vata bazaltica (kg)": 18
-},
-  "manopera": {
-    "Curatat glet pereti/tavane": 23,
-    "Desfacut tencuieli interior": 35,
-    "Glet de ipsos-finisat": 20,
-    "Glet de finisare": 24,
-    "Tencuieli interioare driscuite": 39,
-    "Zugraveli lavabile (2 straturi)": 30,
-    "Sapa egalizare": 38,
-    "Sapa autonivelanta": 25,
-    "Montaj parchet laminat": 20,
-    "Pardoseli gresie/faianta": 75,
-    "Placari pereti Gips-Carton": 44,
-    "Placari tavane Gips-Carton": 58,
-    "Montaj usi interior": 150,
-    "Glafuri-tencuieli": 58,
-    "Tinci pereti": 18
-  },
-  "materiale": {
-    "Saci Glet (20kg)": 45,
-    "Saci Tencuiala (30kg)": 28,
-    "Galeata Lavabila (15L)": 250,
-    "Beton B250 (mc)": 480,
-    "Otel Beton (kg)": 5.2,
-    "Caramida Porotherm (mc)": 510,
-    "Tigla metalica (mp)": 48,
-    "Polistiren EPS80 10cm (mp)": 36, 
-    "Vata Bazaltica 10cm (mp)": 85,
-    "Adeziv pentru polistiren (kg)": 15,
-    "Adeziv pentru gresie/faianta (kg)": 20,
-    "Adeziv pentru gips-carton (kg)": 18,
-    "Adeziv pentru parchet (kg)": 25,
-    "Adeziv pentru lemn (kg)": 30,
-    "Adeziv pentru metal (kg)": 35,
-    "Adeziv pentru sticla (kg)": 40,
-    "Adeziv pentru plastic (kg)": 22,
-    "Adeziv pentru piatra (kg)": 28,
-    "Adeziv pentru beton (kg)": 32,
-    "Adeziv pentru caramida (kg)": 26,
-    "Adeziv pentru vata bazaltica (kg)": 18
-   },
-  "mobilier": {
-    "pat": 90,
-    "dulap": 80,
-    "birou": 300,
-    "scaun": 500,
-    "comoda": 100,
-    "noptiera": 150,
-    "masuta cafea": 400,
-    "canapea": 3000,
-    "fotoliu": 800,
-    "masa": 500,
-    "raft": 200,
-    "biblioteca": 600,
-    "birou de colt": 350,
-    "dulap de colt": 80,
-    "pat de colt": 90,
-    "canapea extensibila": 1500,
-    "masuta de cafea extensibila": 400,      
-    "mobila de baie": 40,
-    "mobila de bucatarie": 50, 
-      "mobila de living": 60,
-      "mobila de dormitor": 70,  
-      "mobila de hol": 99,
-      "mobila de exterior": 120
-   },
-   
-  "suplimente_structura": {
-    "Sarma legat fier (kg)": 12,
-    "Cuie constructii (kg)": 9,
-    "Distantieri placa (buc)": 1.5,
-    "Ulei decofrol (litru)": 25,
-    "Plasa STM 6mm (mp)": 28,
-    "Vata minerala mansarda 10cm (mp)": 22,
-    "Folie anticondens (mp)": 5
-  },
-  "suplimente_finisaje": {
-    "Amorsa pereti (litru)": 12,
-    "Plasa fibra sticla pereti (mp)": 4,
-    "Coltar aluminiu cu plasa (ml)": 12,
-    "Banda imbinare rigips (ml)": 2,
-    "Spreu bituminos hidroizolatie (kg)": 45,
-    "Sapa autonivelanta (Material/kg)": 2.2
-  },
-  "suplimente_mobila": {
-    "Manere mobila (buc)": 5,
-    "Picioare mobila (buc)": 10,
-    "Sine glisante (buc)": 15,
-    "Balamale (buc)": 3,
-    "Suruburi si accesorii (kg)": 20
+    "debitare_pal": {
+      "nume": "Debitarea și căntuirea panourilor PAL",
+      "unitate": "ml",
+      "pret_material": 15.00,
+      "pret_manopera": 10.00
+    },
+    "montaj_bucatarie": {
+      "nume": "Asamblare și montaj mobilier bucătărie",
+      "unitate": "ml",
+      "pret_material": 0.00,
+      "pret_manopera": 250.00
+    },
+    "montaj_dulap": {
+      "nume": "Asamblare dressing / dulap haine",
+      "unitate": "buc",
+      "pret_material": 0.00,
+      "pret_manopera": 300.00
+    }
   }
 }
+
 
