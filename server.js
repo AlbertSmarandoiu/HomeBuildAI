@@ -14,7 +14,8 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import authRoutes from './routes/auth.js';
 import { getPriceEstimate } from './Controllers/estimationController.js';
-
+import offerRoutes from './routes/offers.js';
+import reviewRoutes from './routes/reviews.js';
 dotenv.config();
 
 // 🔹 CREAM APP EXPRESS AICI
@@ -29,7 +30,8 @@ app.use("/api/portfolio", portfolioRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/interiorrequests", interiorRoutes);
 app.use("/api/pro", proRoutes);
-
+app.use("/api/offers", offerRoutes);
+app.use("/api/reviews", reviewRoutes);
 // Ruta test/estimate
 app.get("/api/estimate", getPriceEstimate);
 

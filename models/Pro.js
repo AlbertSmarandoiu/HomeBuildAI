@@ -12,7 +12,9 @@ const proSchema = new mongoose.Schema({
     
     // 🚨 NOI CÂMPURI ADĂUGATE
     description: { type: String, default: "Suntem o echipă de profesioniști gata să ajute la proiectul tău." },
-    portfolioImages: { type: [String], default: [] }, // Array de URL-uri pentru portofoliu (imagini)
+    portfolioImages: { type: [String], default: [] },
+    rating:      { type: Number, default: 0 },
+    reviewCount: { type: Number, default: 0 },
 });
 
 export default mongoose.model("Pro", proSchema);

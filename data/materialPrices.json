@@ -143,8 +143,8 @@
     "Tencuieli exterioare": {
       "nume": "Tencuială decorativă (model simplu)",
       "unitate": "mp",
-      "pret_material": 30.00,
-      "pret_manopera": 35.00
+      "pret_material": 23.00,
+      "pret_manopera": 30.00
     },
     "Coltar cu plasa": {
       "nume": "Montaj colțar cu plasă pentru tencuială",
@@ -173,8 +173,8 @@
     "Fixare plasa, masa spaclu, adeziv": {
       "nume": "Fixare plasă, masă șpaclu și adeziv pentru tencuială",
       "unitate": "mp",
-      "pret_material": 38.00,
-      "pret_manopera": 45.00
+      "pret_material": 33.00,
+      "pret_manopera": 40.00
     },
     "gazon": {
       "nume": "Amenajare rulouri gazon",

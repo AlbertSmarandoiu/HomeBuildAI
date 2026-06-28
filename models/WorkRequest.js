@@ -14,7 +14,12 @@ const WorkRequestSchema = new mongoose.Schema({
   email: { type: String }, // email-ul de contact din formular
   images: { type: [String], default: [] },
   
-  status: { type: String, default: 'pending' },
+  status: {
+    type: String,
+    enum: ['pending', 'accepted', 'completed'],
+    default: 'pending'
+  },
+  acceptedProId: { type: mongoose.Schema.Types.ObjectId, ref: 'Pro', default: null },
   createdAt: { type: Date, default: Date.now }
 });
 

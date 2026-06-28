@@ -6,12 +6,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ─────────────────────────────────────────────────────────────────────────────
-// HELPER: Un singur apel către Groq
-// ─────────────────────────────────────────────────────────────────────────────
 async function groqCall(apiKey, systemPrompt, userPrompt, label = "") {
-    const url = "https://api.groq.com/openai/v1/chat/completions";
-    const response = await fetch(url, {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: {
             "Authorization": `Bearer ${apiKey}`,
@@ -21,7 +17,7 @@ async function groqCall(apiKey, systemPrompt, userPrompt, label = "") {
             model: "llama-3.3-70b-versatile",
             messages: [
                 { role: "system", content: systemPrompt },
-                { role: "user",   content: userPrompt   }
+                { role: "user",   content: userPrompt }
             ],
             temperature: 0,
             response_format: { type: "json_object" }
@@ -29,46 +25,103 @@ async function groqCall(apiKey, systemPrompt, userPrompt, label = "") {
     });
 
     const data = await response.json();
-    if (!data.choices || data.choices.length === 0) {
+    if (!data.choices || data.choices.length === 0)
         throw new Error(`Groq empty response [${label}]`);
-    }
-    console.log(`🤖 [${label}] Răspuns brut:`, data.choices[0].message.content);
+
+    console.log(` [${label}] Răspuns:`, data.choices[0].message.content);
     return JSON.parse(data.choices[0].message.content);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// APELUL 1 — „Arhitectul": deduce camerele și suprafețele din descriere
-// Returnează: { camere, nr_usi, suprafata_totala, are_instalatie_sanitara }
-// ─────────────────────────────────────────────────────────────────────────────
+function calculeazaCantitati(jsonKey, squareMeters, camere = [], nr_uis = 3) {
+    const suprafataParchet = camere
+        .filter(c => c.finisaj === "parchet")
+        .reduce((s, c) => s + c.suprafata, 0) || squareMeters * 0.6;
+
+    const suprafataGresie = camere
+        .filter(c => c.finisaj === "gresie_faianta")
+        .reduce((s, c) => s + c.suprafata * (c.tip === "baie" ? 1.4 : 1.0), 0)
+        || squareMeters * 0.4;
+
+    const pereti = Math.round(squareMeters * 3);
+    const moloz_mc   = Math.max(1, Math.round(squareMeters * 0.08));
+    const moloz_saci = moloz_mc * 15;
+
+    return {
+        "parchet":                              Math.round(suprafataParchet),
+        "gresie_faianta":                       Math.round(suprafataGresie),
+        "Sapa autonivelanta":                   squareMeters,
+        "Sapa egalizare":                       squareMeters,
+        "Glet de ipsos-finisat":                pereti,
+        "Glet de ipsos-încărcare":              pereti,
+        "Zugraveli lavabile (2 straturi)":      pereti,
+        "tencuiala":                            pereti,
+        "Tencuieli interioare driscuite pereti":pereti,
+        "Montaj tapet":                         pereti,
+        "Tinciuiala decorativa":                pereti,
+        "Izolatie cu vata minerala":            squareMeters,
+        "Usi interiore":                        nr_uis,
+        "Desfacut gresie, faianta, parchet":    Math.round(suprafataGresie),
+        "Demontat parchet laminat":             Math.round(suprafataParchet),
+        "Demontat parchet masiv":               Math.round(suprafataParchet),
+        "Demontat linoleum":                    squareMeters,
+        "Desfaceri pardoseli mozaic":           squareMeters,
+        "Demolat pereti zidarie":               Math.round(squareMeters * 0.05),
+        "Desfacut sape":                        squareMeters,
+        "Evacuare moloz":                       moloz_mc,
+        "Incarcare moloz in saci/ manipulare":  moloz_saci,
+        "Izolație exterioară cu polistiren 10cm": squareMeters,
+        "Tencuieli exterioare":                   squareMeters,
+        "Placare vata bazaltica 10cm":            squareMeters,
+        "Fixare plasa, masa spaclu, adeziv":      squareMeters,
+        "Coltar cu plasa":                        Math.round(squareMeters * 0.3),
+        "Profil de soclu":                        Math.round(squareMeters * 0.2),
+        "pavaj":                                  squareMeters,
+        "gazon":                                  squareMeters,
+        "sapatura":                               15,
+        "beton":                                  Math.round(squareMeters * 0.45),
+        "caramida":                               Math.round(squareMeters * 0.45),
+        "Zidarie BCA":                            Math.round(squareMeters * 0.45),
+        "Preparare mortar zidarie":               Math.round(squareMeters * 0.45),
+        "acoperis":                               Math.round(squareMeters * 1.5),
+        "tigla metalica":                         Math.round(squareMeters * 1.5),
+        "tigla ceramica":                         Math.round(squareMeters * 1.5),
+        "Executat panouri cofraj din lemn":       Math.round(squareMeters * 1.2),
+        "Decofrat placa beton":                   Math.round(squareMeters * 1.2),
+        "Cofrat planseu cu scandura":             Math.round(squareMeters * 1.2),
+        "Cofrat planseu cu doka":                 Math.round(squareMeters * 1.2),
+        "Armare planseu cu fier beton":           Math.round(squareMeters * 50),
+        "Armare planseu cu plasa sudata":         Math.round(squareMeters * 1.2),
+        "Hidroizolatie pensulabila (1 mana)":     squareMeters,
+        "Umplut pietris si tasat":                squareMeters,
+        "Trasat fundatie":                        squareMeters,
+        "debitare_pal":    Math.round(squareMeters * 2),
+        "montaj_bucatarie":Math.max(1, Math.round(squareMeters * 0.1)),
+        "montaj_dulap":    Math.max(1, Math.round(squareMeters * 0.05)),
+    };
+}
+
 async function apelArhitect(apiKey, description, squareMeters) {
     const systemPrompt =
-        "Ești un arhitect expert din România. Răspunzi EXCLUSIV cu JSON valid, fără markdown, fără explicații.";
+        "Ești un arhitect expert din România. Răspunzi EXCLUSIV cu JSON valid, fără markdown.";
 
     const userPrompt = `
-Clientul descrie o locuință sau o lucrare de construcții.
-Descrierea clientului: "${description}"
-Suprafața totală declarată: ${squareMeters} mp.
+Citește cu atenție descrierea clientului și extrage camerele locuinței.
+Descrierea: "${description}"
+Suprafața totală: ${squareMeters} mp.
 
-SARCINA TA:
-Extrage toate camerele menționate și estimează suprafața fiecăreia.
-Dacă clientul menționează dimensiuni (ex: "baie 4x3"), calculează suprafața (4×3 = 12 mp).
-Dacă nu menționează suprafețe exacte, distribuie realist cei ${squareMeters} mp astfel:
-  - Fiecare baie: 5–9 mp
-  - Bucătărie: 10–15% din total
-  - Dormitoare: 12–18 mp fiecare
-  - Living/hol: restul suprafeței rămas
+Distribuie suprafața realist:
+- Baie: 5–9 mp per baie → finisaj: "gresie_faianta"
+- Bucătărie: 10–15% din total → finisaj: "gresie_faianta"
+- Dormitor: 12–18 mp → finisaj: "parchet"
+- Living/hol: restul → finisaj: "parchet"
 
-REGULI DE FINISAJ (atribuie automat):
-  - Baie, bucătărie → finisaj: "gresie_faianta"
-  - Dormitor, living, hol, birou → finisaj: "parchet"
-
-Răspunde STRICT cu acest JSON (fără nimic altceva):
+Răspunde STRICT cu JSON:
 {
   "camere": [
-    { "tip": "baie",      "suprafata": 9,  "finisaj": "gresie_faianta" },
-    { "tip": "dormitor",  "suprafata": 14, "finisaj": "parchet" },
-    { "tip": "bucatarie", "suprafata": 8,  "finisaj": "gresie_faianta" },
-    { "tip": "living",    "suprafata": 24, "finisaj": "parchet" }
+    { "tip": "baie",     "suprafata": 8,  "finisaj": "gresie_faianta" },
+    { "tip": "bucatarie","suprafata": 10, "finisaj": "gresie_faianta" },
+    { "tip": "dormitor", "suprafata": 14, "finisaj": "parchet" },
+    { "tip": "living",   "suprafata": 23, "finisaj": "parchet" }
   ],
   "nr_usi_interioare": 4,
   "are_instalatie_sanitara": true
@@ -76,170 +129,80 @@ Răspunde STRICT cu acest JSON (fără nimic altceva):
 
     try {
         const plan = await groqCall(apiKey, systemPrompt, userPrompt, "ARHITECT");
-        console.log("🏠 [Arhitect] Plan camere:", plan.camere);
         return {
-            camere:               plan.camere               || [],
-            nr_usi:               plan.nr_uis_interioare    || plan.nr_usi_interioare || 3,
+            camere: plan.camere || [],
+            nr_uis: plan.nr_usi_interioare || 3,
             are_instalatie_sanitara: plan.are_instalatie_sanitara || false
         };
     } catch (err) {
         console.error("❌ [Arhitect] Eroare:", err.message);
-        // Fallback minimal dacă apelul eșuează
         return {
             camere: [{ tip: "spatiu", suprafata: squareMeters, finisaj: "parchet" }],
-            nr_usi: 3,
+            nr_uis: 3,
             are_instalatie_sanitara: false
         };
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// APELUL 2 — „Devizierul": generează lista de lucrări cu cantități corecte
-// ─────────────────────────────────────────────────────────────────────────────
-async function apelDevizier(apiKey, {
-    description, squareMeters, category,
-    camere, nr_uis, listaServicii,
-    suprafataGresie, suprafataParchet, suprafataPeretiTavan
-}) {
+async function apelSelector(apiKey, { description, category, jsonKey, cheileDisponibile, context }) {
     const systemPrompt =
-        "Ești un devizier expert din România. Răspunzi EXCLUSIV cu JSON valid, fără markdown, fără explicații.";
+        "Ești un inginer constructor expert. Răspunzi EXCLUSIV cu JSON valid, fără markdown.";
 
-    // Construim descrierea camerelor pentru prompt
-    const descriereCamere = camere.length > 0
-        ? camere.map(c => `  - ${c.tip}: ${c.suprafata} mp → finisaj: ${c.finisaj}`).join("\n")
-        : `  - Spațiu unic: ${squareMeters} mp`;
+    const excluderi = jsonKey === "caselarosu" ? `
+EXCLUDERI OBLIGATORII (alege doar UNA din fiecare pereche):
+- Zidărie: alege "caramida" SAU "Zidarie BCA", NICIODATĂ ambele.
+- Acoperiș: alege "acoperis" SAU ("tigla metalica"/"tigla ceramica"). Dacă alegi "acoperis", NU adăuga tigla separat.
+- Cofraj: alege "Cofrat planseu cu scandura" SAU "Cofrat planseu cu doka", nu ambele.
+- Armare: Poți pune AMBELE ("Armare planseu cu fier beton" ȘI "Armare planseu cu plasa sudata") - sunt lucrări diferite.
+` : jsonKey === "exterior" ? `
+EXCLUDERI OBLIGATORII:
+- Izolație: alege "Izolație exterioară cu polistiren 10cm" SAU "Placare vata bazaltica 10cm", NICIODATĂ ambele.
+` : "";
 
     const userPrompt = `
-Ești un Devizier expert. Generează un deviz complet și realist pentru această lucrare.
+Ești un Inginer Constructor expert. Analizează cu atenție descrierea clientului și selectează EXACT lucrările necesare.
 
-Categoria lucrării: "${category}"
-Descrierea clientului: "${description}"
-Suprafața totală la sol: ${squareMeters} mp
+Categoria: "${category}"
+Descrierea completă a clientului: "${description}"
+${context}
 
-PLAN CAMERE (dedus de arhitect):
-${descriereCamere}
+CHEI DISPONIBILE (alege DOAR din această listă):
+${cheileDisponibile.map(c => `  - "${c}"`).join("\n")}
 
-SUPRAFEȚE PRE-CALCULATE (folosește EXACT aceste valori):
-  - Suprafață gresie/faianță (baie + bucătărie + pereți baie): ${Math.round(suprafataGresie)} mp
-  - Suprafață parchet (dormitoare + living): ${Math.round(suprafataParchet)} mp
-  - Suprafață glet + lavabilă (toți pereții + tavan): ${suprafataPeretiTavan} mp
-  - Suprafață șapă (toată suprafața): ${squareMeters} mp
-  - Număr uși interioare: ${nr_uis} buc
+${excluderi}
 
-LISTA COMPLETĂ DE SERVICII DISPONIBILE (folosești EXCLUSIV aceste chei, exact cum sunt scrise):
-${listaServicii}
+REGULI DE SELECȚIE:
+1. Citește TOATĂ descrierea și identifică fiecare lucrare menționată explicit sau implicit.
+2. Dacă clientul menționează "varianta albă" → include obligatoriu: tencuiala/glet + sapa.
+3. Dacă clientul menționează "renovare completă" sau "demolez" → include lucrări de decopertare.
+4. Dacă clientul menționează "gletuire" sau "zugrăveli" → include DOAR Glet și Zugraveli, fără parchet sau gresie.
+5. Dacă clientul menționează "rețele" (apă, electricitate) → include Hidroizolatie dacă e cazul.
+6. FĂRĂ DUPLICATE: fiecare cheie apare o singură dată.
+7. Pune DOAR lucrările care au sens din descriere. Nu inventa lucrări nemenționate.
 
-REGULI STRICTE (respectă-le în ordine):
-1. FINISAJE PE CAMERĂ:
-   - Parchetul se pune DOAR în camerele cu finisaj "parchet". Cantitate = ${Math.round(suprafataParchet)} mp.
-   - Gresie/faianța se pune DOAR în camerele cu finisaj "gresie_faianta". Cantitate = ${Math.round(suprafataGresie)} mp.
-2. LUCRĂRI PREGĂTITOARE (merg ÎNTOTDEAUNA pe toată suprafața):
-   - Șapa (autonivelantă sau de egalizare) → cantitate = ${squareMeters} mp.
-3. FINISAJE PEREȚI ȘI TAVAN (merg pe suprafața desfășurată, NU pe suprafața la sol):
-   - Glet, lavabilă, tencuială, tapet → cantitate = ${suprafataPeretiTavan} mp.
-4. UȘI: Număr bucăți = ${nr_uis}. Pune cheia de uși din listă.
-5. FĂRĂ DUPLICATE: Fiecare cheie apare o singură dată în JSON.
-6. FĂRĂ INVENȚII: Pune DOAR lucrările care au sens din context și din descrierea clientului.
-7. ALEGERE LOGICĂ: Nu pune parchet și gresie pe aceeași cameră. Nu pune cărămidă și BCA în același deviz.
-8. Dacă renovarea este completă, activează obligatoriu fazele de decopertare! Cantitatea de 'Desfacut gresie, faianta, parchet' sau 'Demontat parchet' trebuie să fie EGALĂ cu suprafețele noi corespunzătoare (${Math.round(suprafataParchet)} mp pentru parchet, respectiv ${Math.round(suprafataGresie)} mp pentru gresie).
-9. Adaugă obligatoriu Managementul deșeurilor: 'Evacuare moloz' = ${planArhitect.estimare_moloz_mc} mc și 'Incarcare moloz in saci/ manipulare' = ${planArhitect.estimare_saci_moloz} saci.
-10. Turnarea șapei se face pe toată suprafața apartamentului = ${squareMeters} mp.
-11. Pregătire pereți: Dacă e renovare completă, include 'Glet de ipsos-încărcare' și 'Zugraveli lavabile (2 straturi)' la valoarea desfășurată de ${suprafataPeretiTavan} mp.
-Răspunde STRICT cu JSON, fără markdown, fără explicații:
+Răspunde STRICT cu JSON:
 {
-  "materiale": [
-    { "cheie": "CheiaExactaDinLista", "cantitate": 123 }
-  ]
+  "lucrari_selectate": ["cheie1", "cheie2", "cheie3"]
 }`;
 
     try {
-        const result = await groqCall(apiKey, systemPrompt, userPrompt, "DEVIZIER");
-        return result.materiale || result.lucrari || [];
+        const result = await groqCall(apiKey, systemPrompt, userPrompt, "SELECTOR");
+        return result.lucrari_selectate || [];
     } catch (err) {
-        console.error("❌ [Devizier] Eroare:", err.message);
-        return [];
+        console.error("❌ [Selector] Eroare:", err.message);
+        return cheileDisponibile.slice(0, 5);
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// LOGICĂ PENTRU CATEGORII NON-INTERIOARE (case la roșu, exterior, mobilă)
-// Folosește promptul original îmbunătățit — un singur apel e suficient
-// ─────────────────────────────────────────────────────────────────────────────
-async function apelSimple(apiKey, { description, squareMeters, category, listaServicii }) {
-    const systemPrompt =
-        "Ești un generator de JSON pentru devize de construcții. Răspunzi DOAR în format JSON valid, fără markdown.";
-
-    const userPrompt = `
-Ești un Inginer Constructor și Devizier expert din România.
-Extrage lucrările necesare și estimează cantitățile realiste.
-
-Categoria lucrării: "${category}"
-Descrierea clientului: "${description}"
-Suprafața / lucrarea: ${squareMeters} mp.
-
-Lista COMPLETĂ de servicii disponibile (folosești EXCLUSIV aceste chei):
-${listaServicii}
-
-REGULI DE INGINERIE STRICTE:
-1. FĂRĂ DUPLICATE: O cheie apare o singură dată. Dacă apare de două ori, adună cantitățile.
-2. ALEGERE LOGICĂ STRICTĂ:
-   - Structură: Alege DOAR Cărămidă SAU DOAR BCA. Niciodată ambele!
-   - Fațade: Alege DOAR Polistiren SAU DOAR Vată bazaltică. Niciodată ambele!
-   - Dacă clientul nu specifică, alege cărămida și respectiv polistirenul ca standard.
-3. CUBATURĂ ȘI UNITĂȚI LOGICE (case la roșu):
-   - Zidărie (mc): aprox 0.45 mc  ${squareMeters} mp = ${Math.round(squareMeters * 0.45)} mc
-   - Beton (mc): aprox 0.45 mc  ${squareMeters} mp = ${Math.round(squareMeters * 0.45)} mc
-   - Fier beton (kg): aprox 50 kg  ${squareMeters} mp = ${squareMeters * 50} kg
-   - Acoperiș (mp): aprox ${Math.round(squareMeters * 1.5)} mp (suprafața la sol  1.5)
-   - Cofraje (mp): aprox ${Math.round(squareMeters * 1.2)} mp (suprafața la sol  1.2)
-   - Săpătură (ore): max 15 ore
-4. EXTERIOARE — ASOCIEREA SUPRAFEȚEI:
-   - Dacă clientul cere izolație/fațadă/tencuială exterioară → asociază ${squareMeters} mp cu materialele de fațadă.
-   - Dacă clientul cere pavaj/gazon/curte → asociază ${squareMeters} mp cu materialele de sol.
-   - NU amesteca fațada cu curtea dacă textul nu le cere explicit pe amândouă.
-5. Folosește EXCLUSIV cheile din lista de mai sus, scrise exact cum apar.
-REGULI STRICTE DE DIMENSIONARE REALE:
-1. Suprafețele plane ('Izolație exterioară cu polistiren 10cm', 'Placare vată bazaltică 10cm', 'Tencuială decorativă') se pun exact la valoarea fațadei: ${squareMeters} mp.
-2. ALEGERE MATERIE PRIMĂ: Dacă se cere polistiren, NU pune vată bazaltică sub nicio formă!
-3. REGLARE METRI LINARI (ml) PENTRU PROFILE: 
-   - 'Montaj profil de soclu pentru tencuială' reprezintă perimetrul de bază al fațadei. Acesta se calculează ca fiind aproximativ 20% din suprafața fațadei! Pentru ${squareMeters} mp, cantitatea corectă este de aprox. ${Math.round(squareMeters * 0.2)} ml. (NU pune ${squareMeters}!).
-   - 'Montaj colțar cu plasă pentru tencuială' reprezintă colțurile clădirii și ale geamurilor. Se calculează ca fiind aprox. 30% din suprafața fațadei! Pentru ${squareMeters} mp, cantitatea corectă este de aprox. ${Math.round(squareMeters * 0.3)} ml.
-4. Finisajele de fațadă ('Fixare plasă, masă șpaclu și adeziv') se pun la fel ca izolația = ${squareMeters} mp.
-Răspunde STRICT cu JSON (fără markdown, fără explicații):
-{
-  "materiale": [
-    { "cheie": "CheiaExactaDinLista", "cantitate": 123 }
-  ]
-}`;
-
-    try {
-        const result = await groqCall(apiKey, systemPrompt, userPrompt, "SIMPLU");
-        let arr = result.materiale || result.lucrari || [];
-        if (arr.length === 0) {
-            const found = Object.values(result).find(v => Array.isArray(v));
-            if (found) arr = found;
-        }
-        return arr;
-    } catch (err) {
-        console.error("❌ [Simple] Eroare:", err.message);
-        return [];
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// EXPORT PRINCIPAL
-// ─────────────────────────────────────────────────────────────────────────────
 export async function extractMaterialsFromAI({ description, squareMeters, category }) {
     const apiKey = process.env.GROQ_API_KEY;
 
-    // ── Citim catalogul de prețuri ────────────────────────────────────────────
     const pricingPath = path.join(__dirname, '../data/materialPrices.json');
     const materialPrices = JSON.parse(fs.readFileSync(pricingPath, 'utf8'));
 
-    // ── Normalizăm categoria ──────────────────────────────────────────────────
     const cleanCategory = category.toLowerCase().replace(/\s/g, "")
-        .replace(/ș/g, "s").replace(/ț/g, "t")
-        .replace(/ă/g, "a").replace(/â/g, "a").replace(/î/g, "i");
+        .replace(/ș/g,"s").replace(/ț/g,"t")
+        .replace(/ă/g,"a").replace(/â/g,"a").replace(/î/g,"i");
 
     const categoryMap = {
         "lucrariinterioare": "interioare",
@@ -253,64 +216,72 @@ export async function extractMaterialsFromAI({ description, squareMeters, catego
     };
 
     const jsonKey = categoryMap[cleanCategory] || cleanCategory;
-    const catalogCategorie = materialPrices[jsonKey] || {};
+    let catalogCategorie = { ...(materialPrices[jsonKey] || {}) };
 
-    // Lista cu cheie + descriere completă (ajută AI-ul să înțeleagă ce e fiecare)
-    const listaServicii = Object.entries(catalogCategorie)
-        .map(([cheie, det]) => `  - Cheie validă: "${cheie}" (Aceasta înseamnă: ${det.nume})`)
+    const esteVariantaAlba = /variant[aă]\s*alb[aă]|tencuial[aă].*glet|glet.*tencuial[aă]|finisa[tj].*interior|interior.*finisa[tj]/i.test(description);
+    if (jsonKey === "caselarosu" && esteVariantaAlba) {
+        const int = materialPrices["interioare"] || {};
+        const itemsExtra = ["tencuiala", "Tencuieli interioare driscuite pereti", "Glet de ipsos-încărcare", "Zugraveli lavabile (2 straturi)", "Sapa autonivelanta", "Sapa egalizare"];
+        itemsExtra.forEach(k => { if (int[k]) catalogCategorie[k] = int[k]; });
+        console.log("📋 [DEBUG] Varianta albă detectată → adăugat finisaje interioare");
+    }
+
+    const cheileDisponibile = Object.keys(catalogCategorie);
+    const cheileDescrise    = Object.entries(catalogCategorie)
+        .map(([k, v]) => `  - "${k}" = ${v.nume}`)
         .join("\n");
 
-    console.log(`📋 [DEBUG] Categoria detectată: [${jsonKey}]`);
-    console.log(`📋 [DEBUG] Lista servicii trimisă către AI:\n`, listaServicii);
+    console.log(` [DEBUG] Categoria: [${jsonKey}], Varianta albă: ${esteVariantaAlba}`);
 
-    // ── Ramificăm logica pe tip de categorie ─────────────────────────────────
-
-    // INTERIOARE → două apeluri: Arhitect + Devizier
     if (jsonKey === "interioare") {
+        const { camere, nr_uis } = await apelArhitect(apiKey, description, squareMeters);
 
-        // Apelul 1: Arhitectul deduce camerele
-        const { camere, nr_uis, are_instalatie_sanitara } =
-            await apelArhitect(apiKey, description, squareMeters);
+        const suprafataParchet = camere.filter(c => c.finisaj === "parchet").reduce((s,c) => s + c.suprafata, 0);
+        const suprafataGresie  = camere.filter(c => c.finisaj === "gresie_faianta").reduce((s,c) => s + c.suprafata * (c.tip === "baie" ? 1.4 : 1.0), 0);
+        const pereti = Math.round(squareMeters * 3);
+        const moloz_mc = Math.max(1, Math.round(squareMeters * 0.08));
 
-        // Calculăm suprafețele derivate din planul arhitectului
-        const suprafataGresie = camere
-            .filter(c => c.finisaj === "gresie_faianta")
-            .reduce((sum, c) => {
-                // Baia: adăugăm ~40% extra pentru pereții placați cu faianță
-                const extra = c.tip === "baie" ? 1.4 : 1.0;
-                return sum + c.suprafata * extra;
-            }, 0);
+        console.log(` Parchet: ${Math.round(suprafataParchet)} mp | Gresie: ${Math.round(suprafataGresie)} mp | Pereți: ${pereti} mp | Moloz: ${moloz_mc} mc`);
 
-        const suprafataParchet = camere
-            .filter(c => c.finisaj === "parchet")
-            .reduce((sum, c) => sum + c.suprafata, 0);
+        const context = `
+Plan camere dedus:
+${camere.map(c => `  - ${c.tip}: ${c.suprafata} mp (${c.finisaj})`).join("\n")}
+Uși interioare: ${nr_uis} buc
+Suprafață la sol: ${squareMeters} mp`;
 
-        // Suprafața desfășurată pereți + tavan ≈ suprafața la sol × 3
-        const suprafataPeretiTavan = Math.round(squareMeters * 3);
-
-        console.log(`📐 [Calcule] Gresie/faianță: ${Math.round(suprafataGresie)} mp`);
-        console.log(`📐 [Calcule] Parchet: ${Math.round(suprafataParchet)} mp`);
-        console.log(`📐 [Calcule] Pereți+tavan: ${suprafataPeretiTavan} mp`);
-
-        // Apelul 2: Devizierul generează lista de lucrări
-        const materiale = await apelDevizier(apiKey, {
-            description, squareMeters, category,
-            camere, nr_uis,
-            listaServicii,
-            suprafataGresie,
-            suprafataParchet,
-            suprafataPeretiTavan
+        const cheiiSelectate = await apelSelector(apiKey, {
+            description, category, jsonKey,
+            cheileDisponibile, cheileDescrise, context
         });
 
-        console.log("✅ [DEBUG] Structură finală trimisă la calculatoare:", materiale);
+        const cantitati = calculeazaCantitati(jsonKey, squareMeters, camere, nr_uis);
+        const materiale = cheiiSelectate
+            .filter(k => catalogCategorie[k] !== undefined)
+            .map(k => ({ cheie: k, cantitate: cantitati[k] ?? squareMeters }));
+
+        console.log("✅ Deviz final:", materiale);
         return { materiale };
     }
 
-    // TOATE CELELALTE CATEGORII → un singur apel optimizat
-    const materiale = await apelSimple(apiKey, {
-        description, squareMeters, category, listaServicii
+    const context = jsonKey === "caselarosu"
+        ? `Suprafață la sol: ${squareMeters} mp. Cantități de referință pentru inginerie:
+  - Zidărie: ${Math.round(squareMeters * 0.45)} mc
+  - Beton: ${Math.round(squareMeters * 0.45)} mc
+  - Fier beton: ${Math.round(squareMeters * 50)} kg
+  - Acoperiș: ${Math.round(squareMeters * 1.5)} mp
+  - Cofraj: ${Math.round(squareMeters * 1.2)} mp`
+        : `Suprafață: ${squareMeters} mp.`;
+
+    const cheiiSelectate = await apelSelector(apiKey, {
+        description, category, jsonKey,
+        cheileDisponibile, cheileDescrise, context
     });
 
-    console.log("✅ [DEBUG] Structură finală trimisă la calculatoare:", materiale);
+    const cantitati = calculeazaCantitati(jsonKey, squareMeters, [], 3);
+    const materiale = cheiiSelectate
+        .filter(k => catalogCategorie[k] !== undefined)
+        .map(k => ({ cheie: k, cantitate: cantitati[k] ?? squareMeters }));
+
+    console.log("✅ Deviz final:", materiale);
     return { materiale };
 }
